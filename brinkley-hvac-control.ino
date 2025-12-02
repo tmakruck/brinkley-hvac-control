@@ -1,10 +1,9 @@
-#include <Arduino.h>
-#include <avr/pgmspace.h>
+// For Menu
 #include <menu.h>
 #include <menuIO/liquidCrystalOut.h>
 #include <menuIO/serialIO.h>
 #include <menuIO/stringIn.h>
-#include <menuIO/chainStream.h>
+// For temp Sensors
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
@@ -235,9 +234,6 @@ int retrieveTemperature(Thermometer t) {
   // call sensors.requestTemperatures() to issue a global temperature
   // request to all devices on the bus
   Serial.print("Requesting temperatures...");
-  sensors.requestTemperatures(); // Send the command to get temperatures
-  Serial.println("DONE");
-  delay(1500);
   // After we got the temperatures, we can print them here.
   // We use the function ByIndex, and as an example get the temperature from the first sensor only.
   DeviceAddress* address = getAddress(t);
