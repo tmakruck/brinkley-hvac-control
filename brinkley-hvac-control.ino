@@ -12,10 +12,30 @@ using namespace std;
 
 enum class Thermometer {
   Outside,
-  Underbelly
+  Underbelly, 
+  Third
 };
 
+enum RoomName {
+    BEDROOM,
+    LIVING_ROOM,
+    GARAGE
+};
+
+void log_debug(const char* fmt, ...){
+  char buffer[128];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buffer, sizeof(buffer), fmt, args);
+  va_end(args);
+  Serial.println(buffer);
+}
+
 #ifndef CONSTANTS
+  #define HEAT_PUMP_THRESHOLD 32
+  #define UNDERBELLY_TEMP_THRESHOLD 50
+  #define LOOP_DELAY_MS 100
+
   #pragma region LCD
     #define btnNONE 0
     #define btnRIGHT 1
@@ -41,37 +61,36 @@ enum class Thermometer {
       #define D07_LCD_DataPin3 7
       #define D08_LCD_RS_PIN 8
       #define D09_LCD_ENABLE_PIN 9
+      #define D10_LCD_BACKLIGHT_PIN 10
     #pragma endregion LCD
 
-    
+    #pragma region Custom Controls
+      const int SSR1_HEAT   = 18;
+      const int SSR2_HEAT   = 19;
+      const int SSR3_HEAT   = 20;
+      const int Temperature_Data = 21;
+    #pragma endregion
 
-    // Zone thermostat inputs (yellow wires)
-    #define Zone1_In 24   // Bedroom thermostat trigger (Y)
-    #define Zone2_In 25   // Living Room thermostat trigger (Y)
-    #define Zone3_In 26   // Garage thermostat trigger (Y)
-    #define Furnace_In 27 // Furnace trigger (blue wire from Zone 1 thermostat)
+    #pragma Zone Starts
+      const int ZONE1_START = 22;
+      const int ZONE2_START = 38;
+      const int ZONE3_START = 39;
 
-    // Heat pump & furnace outputs
-    #define Zone1_HeatPump_Out 30
-    #define Zone2_HeatPump_Out 31
-    #define Zone3_HeatPump_Out 32
-    #define Furnace_Out        33
-
-    // Space heater outputs
-    #define Zone1_Space_Out 36
-    #define Zone2_Space_Out 37
-    #define Zone3_Space_Out 38
+      const int FURN_SENSE  = 23;
+      const int FURN_OUT    = 31;
+    #pragma endregion
 
     // Temperature Probes
-    #define Temperature_Data 30
   #pragma endregion Pin Definitions
 
+  #define SpaceHeater HIGH
+  #define DefaultBehavior LOW
   #define CONSTANTS // To consider it initialized
 #endif
 #define LCD true
 
-#pragma region Menu Setup
 
+#pragma region Menu Setup
   #if LCD == true  //menu setup
     LiquidCrystal lcd(D08_LCD_RS_PIN, D09_LCD_ENABLE_PIN, D04_LCD_DataPin0, D05_LCD_DataPin1, D06_LCD_DataPin2, D07_LCD_DataPin3);
     
@@ -197,223 +216,305 @@ enum class Thermometer {
         lcd.setCursor(0, line);
         lcd.print(stringBuffer);
       #endif
-      // Serial.print("LCD Line ");
-      // Serial.print(line + 1);
-      // Serial.print("=");
-      // Serial.println(stringBuffer);
     }
   #endif  //menu setup
 #pragma endregion
 
+#pragma region Thermometer Setup
+  OneWire oneWire(Temperature_Data);
+  DallasTemperature sensors(&oneWire);
 
-OneWire oneWire(Temperature_Data);
-DallasTemperature sensors(&oneWire);
+  // Store each sensor's unique 64-bit address
+  DeviceAddress outsideAddr    = { 0x28, 0xEC, 0x81, 0x87, 0x00, 0xE0, 0x49, 0xBC };
+  DeviceAddress underbellyAddr = { 0x28, 0xA6, 0x0B, 0x87, 0x00, 0xA6, 0x0C, 0x38 };
+  DeviceAddress thirdAddr      = { 0x28, 0x44, 0x71, 0x87, 0x00, 0x6B, 0x20, 0x12 };
 
-// Store each sensor's unique 64-bit address
-DeviceAddress outsideAddr = { 0x28, 0xEC, 0x81, 0x87, 0x00, 0xE0, 0x49, 0xBC };
-DeviceAddress underbellyAddr = { 0x28, 0xA6, 0x0B, 0x87, 0x00, 0xA6, 0x0C, 0x38 };
-
-// Function to get address by enum
-DeviceAddress* getAddress(Thermometer t) {
-  switch (t) {
-    case Thermometer::Outside:    return &outsideAddr;
-    case Thermometer::Underbelly: return &underbellyAddr;
-    default: return nullptr;
-  }
-}
-
-const char* getName(Thermometer t) {
-  switch (t) {
-    case Thermometer::Outside:    return "Outside";
-    case Thermometer::Underbelly: return "Underbelly";
-    default:                      return "Unknown";
-  }
-}
-
-int retrieveTemperature(Thermometer t) {
-  // call sensors.requestTemperatures() to issue a global temperature
-  // request to all devices on the bus
-  Serial.print("Requesting temperatures...");
-  // After we got the temperatures, we can print them here.
-  // We use the function ByIndex, and as an example get the temperature from the first sensor only.
-  DeviceAddress* address = getAddress(t);
-  int temperature = static_cast<int>(round(sensors.getTempF(*address)));
-
-  // Check if reading was successful
-  if (temperature != DEVICE_DISCONNECTED_C)
-  {
-    Serial.print("Temperature for ");
-    Serial.print(getName(t));
-    Serial.print(" is: ");
-    Serial.println(temperature);
-  }
-  else
-  {
-    Serial.println("Error: Could not read temperature data");
-  }
-
-  return temperature;
-}
-
-// Generic handler for zones 2 and 3
-void handleZone(int triggerPin, int heatPumpPin, int spacePin, int outdoorTemp) {
-  bool zoneActive = digitalRead(triggerPin) == HIGH;
-
-  if (zoneActive) {
-    if (outdoorTemp >= 35) {
-      digitalWrite(heatPumpPin, HIGH);
-      digitalWrite(spacePin, LOW);
-    } else {
-      digitalWrite(heatPumpPin, LOW);
-      digitalWrite(spacePin, HIGH);
+  // Function to get address by enum
+  DeviceAddress* getAddress(Thermometer t) {
+    switch (t) {
+      case Thermometer::Outside:    return &outsideAddr;
+      case Thermometer::Underbelly: return &underbellyAddr;
+      case Thermometer::Third:      return &thirdAddr;
+      default: return nullptr;
     }
-  } else {
-    digitalWrite(heatPumpPin, LOW);
-    digitalWrite(spacePin, LOW);
   }
-}
+
+  const char* getName(Thermometer t) {
+    switch (t) {
+      case Thermometer::Outside:    return "Outside";
+      case Thermometer::Underbelly: return "Underbelly";
+      case Thermometer::Third:      return "Third";
+      default:                      return "Unknown";
+    }
+  }
+
+  int retrieveTemperature(Thermometer t) {
+    // call sensors.requestTemperatures() to issue a global temperature
+    // request to all devices on the bus
+    // After we got the temperatures, we can print them here.
+    // We use the function ByIndex, and as an example get the temperature from the first sensor only.
+    DeviceAddress* address = getAddress(t);
+    int temperature = static_cast<int>(round(sensors.getTempF(*address)));
+
+    // Check if reading was successful
+    if (temperature != DEVICE_DISCONNECTED_C)
+    {
+      log_debug("Temperature for %s is %d",getName(t), temperature);
+    }
+    else
+    {
+      log_debug("Error: Could not read temperature data");
+    }
+
+    return temperature;
+  }
+
+  void printAddress(Thermometer t) {
+    DeviceAddress* deviceAddress = getAddress(t);
+    for (uint8_t i = 0; i < 8; i++)
+    {
+      if ((*deviceAddress)[i] < 16) Serial.print("0");
+      Serial.print((*deviceAddress)[i], HEX);
+    }
+  }
+
+  void startSensors(){
+    sensors.begin();
+  }
+
+#pragma endregion
+
+#pragma region HVAC setup
+class HVAC {
+public:    
+    // Room identifier
+    RoomName room;
+
+    // Sense input pins
+    int pinFanLoSense;
+    int pinFanHiSense;
+    int pinACSense;
+    int pinHPSense;
+
+    // Relay output pins (control coils)
+    int pinFanLoOut;
+    int pinFanHiOut;
+    int pinACOut;
+    int pinHPOut;
+
+    // SSR output pin
+    int pinSSR;
+
+    // Whether this HVAC instance uses a furnace
+    bool hasFurnace;
+
+    HVAC(int startPin, bool furnaceEnabled, int ssrPin, RoomName roomName)
+        : room(roomName)
+    {
+        hasFurnace = furnaceEnabled;
+        pinSSR = ssrPin;
+
+        // Inputs (sense pins)
+        pinFanLoSense = startPin;          // +0
+        pinFanHiSense = startPin + 2;      // +2
+        pinACSense    = startPin + 4;      // +4
+        pinHPSense    = startPin + 6;      // +6
+
+        // Outputs (relay coil pins)
+        pinFanLoOut   = startPin + 8;      // +8
+        pinFanHiOut   = startPin + 10;     // +10
+        pinACOut      = startPin + 12;     // +12
+        pinHPOut      = startPin + 14;     // +14
+    }
+
+    void begin() {
+        // Sense inputs
+        pinMode(pinFanLoSense, INPUT_PULLUP);
+        pinMode(pinFanHiSense, INPUT_PULLUP);
+        pinMode(pinACSense,    INPUT_PULLUP);
+        pinMode(pinHPSense,    INPUT_PULLUP);
+
+        // Relay outputs
+        pinMode(pinFanLoOut, OUTPUT);
+        pinMode(pinFanHiOut, OUTPUT);
+        pinMode(pinACOut,    OUTPUT);
+        pinMode(pinHPOut,    OUTPUT);
+
+        // SSR output
+        pinMode(pinSSR, OUTPUT);
+
+        // Initialize all outputs LOW (relays de‑energized → NC pass‑through)
+        digitalWrite(pinFanLoOut, LOW);
+        digitalWrite(pinFanHiOut, LOW);
+        digitalWrite(pinACOut,    LOW);
+        digitalWrite(pinHPOut,    LOW);
+        digitalWrite(pinSSR,      LOW);
+    }
+
+    bool readPin(char* pinName, int pinID){
+      bool isHigh = digitalRead(pinID) == HIGH;
+      char* status = "Low";
+      if (isHigh){
+        status = "High";
+      }
+      log_debug("%s reads %s", pinName, status);
+      return isHigh;
+
+    }
+    // --- Sense helpers ---
+    bool fanLoCall()    { return readPin("Fan Lo", pinFanLoSense); }
+    bool fanHiCall()    { return readPin("Fan Hi", pinFanHiSense); }
+    bool acCall()       { return readPin("Air Conditioner", pinACSense); }
+    bool heatPumpCall() { return readPin("Heat Pump", pinHPSense); }
+    bool furnaceCall() { return readPin("Furnace", FURN_SENSE); }
+
+    // --- Relay control helpers ---
+    void setPin(char* pinName, int pinID, bool toNC){
+      log_debug("Setting %s (%d) to %d", pinName, pinID, toNC);
+      digitalWrite(pinID, toNC ? HIGH : LOW);
+    }
+    void setFanLo(bool toNC)    { setPin("Fan Lo", pinFanLoOut, !toNC);  }
+    void setFanHi(bool toNC)    { setPin("Fan Hi", pinFanHiOut, !toNC); }
+    void setAC(bool toNC)       { setPin("Air Conditioner", pinACOut, !toNC); }
+    void setHeatPump(bool toNC) { setPin("Heat Pump", pinHPOut, !toNC); }
+
+    // --- SSR control ---
+    void setSSR(bool on)        { setPin("Space Heater", pinSSR, on); }
+    void setFurnace(bool toNC)  { setPin("Furnace", FURN_OUT, !toNC);}
+
+    // convert enum → readable string
+    const char* roomNameString() const {
+        switch (room) {
+            case BEDROOM:     return "Bedroom";
+            case LIVING_ROOM: return "Living Room";
+            case GARAGE:      return "Garage";
+            default:          return "Unknown";
+        }
+    }
+
+    void preferHeatPump(){
+      setFanLo(true);
+      setFanHi(true);
+      setAC(true);
+      setHeatPump(true);
+      setSSR(false);
+      if (hasFurnace){
+        setFurnace(false);
+      }
+    }
+    void denyHeatPump(){
+      bool needsHeat = false;
+      if (hasFurnace){
+        needsHeat = heatPumpCall() || furnaceCall();
+      }
+      else{
+        needsHeat = heatPumpCall();
+      }
+
+      if (needsHeat){
+        log_debug("%s is asking for heat", roomNameString());
+        setFanLo(false);
+        setFanHi(false);
+        setAC(false);
+        setHeatPump(false);
+
+        setSSR(true);
+        if (hasFurnace){
+          setFurnace(true);
+        }
+      }
+      else{
+        log_debug("%s is NOT asking for heat", roomNameString());
+        setFanLo(true);
+        setFanHi(true);
+        setAC(true);
+        setHeatPump(true);
+        setSSR(false);
+        if (hasFurnace){
+          setFurnace(false);
+        }
+      }
+    }
+    void VerifyCalls(){
+        fanLoCall();
+        fanHiCall();
+        acCall();
+        heatPumpCall();
+        if (hasFurnace){
+          furnaceCall();
+        }
+    }
+    
+    // --- Make appropriate adjustments ---
+    void Adjust(){
+      log_debug("Requesting temperatures...");
+      int outdoorTemp     = retrieveTemperature(Thermometer::Outside);
+      int underbellyTemp  = retrieveTemperature(Thermometer::Underbelly);
+      int thirdTemp       = retrieveTemperature(Thermometer::Third);
+
+      writeLCD(FIRST_LINE, "Out:%2d", outdoorTemp);
+      writeLCD(SECOND_LINE, "Under:%2d", underbellyTemp);
+
+      bool shouldRunHeatPumps = outdoorTemp >= HEAT_PUMP_THRESHOLD;
+      bool underbellyNeedsHeat = underbellyTemp < UNDERBELLY_TEMP_THRESHOLD;
+      log_debug("------------------");
+      log_debug("Adjusting %s", roomNameString());
+      
+      VerifyCalls();
+      
+      if (!shouldRunHeatPumps){
+        log_debug("It's Cold Outside, start the furnace and Space Heaters");
+        denyHeatPump();
+      }
+      else{
+        log_debug("It's warm enough, use the heat pumps");
+        preferHeatPump();
+      }
+
+    }
+};
+
+  bool controlsFurnace = true;
+  HVAC Zone1(ZONE1_START, controlsFurnace, SSR1_HEAT, BEDROOM);  
+  HVAC Zone2(ZONE2_START, !controlsFurnace, SSR2_HEAT, LIVING_ROOM);  
+  HVAC Zone3(ZONE3_START, !controlsFurnace, SSR3_HEAT, GARAGE);
+#pragma endregion
 
 
 void loop() {
+  log_debug("------------------------------------------------------------------------------------------");
   #if LCD == true
     handleButtonPress();
   #endif
+  delay(LOOP_DELAY_MS);
+  sensors.requestTemperatures();
+      
+  Zone1.Adjust();
+  Zone2.Adjust();
+  Zone3.Adjust();
 
-  // Read triggers
-  const bool zone1Trigger   = digitalRead(Zone1_In) == HIGH;
-  const bool furnaceTrigger = digitalRead(Furnace_In) == HIGH;
-  const bool zone2Trigger   = digitalRead(Zone2_In) == HIGH;
-  const bool zone3Trigger   = digitalRead(Zone3_In) == HIGH;
-
-  // Read temperatures
-  const int outdoorTemp    = retrieveTemperature(Thermometer::Outside);
-  const int underbellyTemp = retrieveTemperature(Thermometer::Underbelly);
-
-  writeLCD(FIRST_LINE, "Out:%2d Under:%2d", outdoorTemp, underbellyTemp);
-
-  // -------------------------
-  // Furnace requirement logic
-  // -------------------------
-  // Furnace is required if underbelly is cold OR Zone1 thermostat requests furnace
-  bool zone1Active     = zone1Trigger || furnaceTrigger;
-  bool furnaceRequired = (underbellyTemp < 45) || (zone1Active && outdoorTemp < 35);
-
-  // -------------------------
-  // Zone 1 (Bedroom)
-  // -------------------------
-  if (zone1Active) {
-    if (outdoorTemp >= 35 && !furnaceRequired) {
-      // Warm enough and furnace not forced: run heat pump
-      digitalWrite(Zone1_HeatPump_Out, HIGH);
-      digitalWrite(Zone1_Space_Out, LOW);
-      digitalWrite(Furnace_Out, LOW);
-    } else {
-      // Furnace required either by cold underbelly or cold outdoor
-      digitalWrite(Furnace_Out, HIGH);
-      digitalWrite(Zone1_HeatPump_Out, LOW);
-      digitalWrite(Zone1_Space_Out, HIGH); // assist with space heater
-    }
-  } else {
-    // Zone1 idle, but furnace may still be required due to underbelly
-    if (furnaceRequired) {
-      digitalWrite(Furnace_Out, HIGH);
-      digitalWrite(Zone1_Space_Out, HIGH); // keep space heater on with furnace
-      digitalWrite(Zone1_HeatPump_Out, LOW);
-    } else {
-      digitalWrite(Furnace_Out, LOW);
-      digitalWrite(Zone1_Space_Out, LOW);
-      digitalWrite(Zone1_HeatPump_Out, LOW);
-    }
-  }
-
-  // -------------------------
-  // Zone 2 (Living Room)
-  // -------------------------
-  handleZone(Zone2_In, Zone2_HeatPump_Out, Zone2_Space_Out, outdoorTemp);
-
-  // -------------------------
-  // Zone 3 (Garage)
-  // -------------------------
-  handleZone(Zone3_In, Zone3_HeatPump_Out, Zone3_Space_Out, outdoorTemp);
-
-  delay(250);
+  
 }
 
-void printAddress(Thermometer t) {
-  DeviceAddress* deviceAddress = getAddress(t);
-  for (uint8_t i = 0; i < 8; i++)
-  {
-    if ((*deviceAddress)[i] < 16) Serial.print("0");
-    Serial.print((*deviceAddress)[i], HEX);
-  }
-}
 
-void startSensors(){
-  sensors.begin();
-
-  Serial.print("Found ");
-  Serial.print(sensors.getDeviceCount(), DEC);
-  Serial.println(" devices.");
-
-    // report parasite power requirements
-  Serial.print("Parasite power is: ");
-  if (sensors.isParasitePowerMode()) Serial.println("ON");
-  else Serial.println("OFF");
-
-  Serial.print("Device 0 Address: ");
-  printAddress(Thermometer::Outside);
-  Serial.println();
-
-  Serial.print("Device 1 Address: ");
-  printAddress(Thermometer::Underbelly);
-  Serial.println();
-}
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("------------------------------------------------------------------------------------------");
+  log_debug("------------------------------------------------------------------------------------------");
   #if LCD == true
+  
     lcd.begin(16, 2);
   #endif
   writeLCD(FIRST_LINE, "Initializing");
 
-  // --- Inputs ---
-  pinMode(Zone1_In, INPUT);    // Bedroom thermostat (yellow wire)
-  pinMode(Zone2_In, INPUT);    // Living Room thermostat (yellow wire)
-  pinMode(Zone3_In, INPUT);    // Garage thermostat (yellow wire)
-  pinMode(Furnace_In, INPUT);  // Furnace trigger (blue wire from Zone 1)
+  Zone1.begin();
+  Zone2.begin();
+  Zone3.begin();
 
-  // --- Outputs: Heat pumps & furnace ---
-  pinMode(Zone1_HeatPump_Out, OUTPUT);
-  pinMode(Zone2_HeatPump_Out, OUTPUT);
-  pinMode(Zone3_HeatPump_Out, OUTPUT);
-  pinMode(Furnace_Out, OUTPUT);
-
-  // --- Outputs: Space heaters ---
-  pinMode(Zone1_Space_Out, OUTPUT);
-  pinMode(Zone2_Space_Out, OUTPUT);
-  pinMode(Zone3_Space_Out, OUTPUT);
-
-
-  Serial.println("Pins Configured");
-
-  // Initialize all outputs to OFF (LOW)
-  digitalWrite(Zone1_HeatPump_Out, LOW);
-  digitalWrite(Zone2_HeatPump_Out, LOW);
-  digitalWrite(Zone3_HeatPump_Out, LOW);
-  digitalWrite(Furnace_Out, LOW);
-
-  digitalWrite(Zone1_Space_Out, LOW);
-  digitalWrite(Zone2_Space_Out, LOW);
-  digitalWrite(Zone3_Space_Out, LOW);
-
-
-  Serial.println("Pins Off");
+  log_debug("Pins Off");
   
-
   startSensors();
 
-  
   writeLCD(SECOND_LINE, "Pins Set");
 
 }
