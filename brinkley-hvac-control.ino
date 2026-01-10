@@ -121,12 +121,18 @@ void log_debug(const char* fmt, ...){
       int adc_key_in = analogRead(0);  // read the value from the sensor
 
       //value read: 0(0V), 130(0.64V), 306(1.49V), 479(2.33V), 722(3.5V), 1023(4.97V)
-      if (adc_key_in > 1000) return btnNONE;
-      if (adc_key_in < 75) return btnRIGHT;
-      if (adc_key_in < 218) return btnDOWN;
-      if (adc_key_in < 392) return btnUP;
-      if (adc_key_in < 600) return btnLEFT;
-      if (adc_key_in < 800) return btnSELECT;
+      int rightMax = 75;
+      int downMax = 218;
+      int upMax = 392;
+      int leftMax = 600;
+      int selectMax = 800;
+      int noneMin = 1000;
+      if (adc_key_in > noneMin) return btnNONE;
+      if (adc_key_in < rightMax) return btnRIGHT;
+      if (adc_key_in < downMax) return btnDOWN;
+      if (adc_key_in < upMax) return btnUP;
+      if (adc_key_in < leftMax) return btnLEFT;
+      if (adc_key_in < selectMax) return btnSELECT;
       return btnNONE;
     }
 
@@ -195,14 +201,6 @@ void log_debug(const char* fmt, ...){
       writeLCD(line, stringBuffer);
     }
 
-    void writeLCD(int line, int, uint8_t value) {
-    }
-
-    void writeLCD(int line, bool input) {
-      char *stringBuffer = input ? "true" : "false";
-      writeLCD(line, stringBuffer);
-    }
-
     void writeLCD(int line, char *format, int value1, int value2 = -1) {
       char stringBuffer[LCD_LINE_LENGTH] = {};
       snprintf(stringBuffer, LCD_LINE_LENGTH, format, value1, value2);
@@ -257,7 +255,7 @@ void log_debug(const char* fmt, ...){
     int temperature = static_cast<int>(round(sensors.getTempF(*address)));
 
     // Check if reading was successful
-    if (temperature != DEVICE_DISCONNECTED_C)
+    if (temperature != DEVICE_DISCONNECTED_F)
     {
       log_debug("Temperature for %s is %d",getName(t), temperature);
     }
@@ -351,16 +349,16 @@ public:
         digitalWrite(pinSSR,      LOW);
     }
 
-    bool readPin(char* pinName, int pinID){
-      bool isHigh = digitalRead(pinID) == HIGH;
-      char* status = "Low";
-      if (isHigh){
-        status = "High";
-      }
-      log_debug("%s reads %s", pinName, status);
-      return isHigh;
-
+    const char* statusString(bool isHigh) {
+      return isHigh ? "High" : "Low";
     }
+
+    bool readPin(char* pinName, int pinID) {
+      bool isHigh = digitalRead(pinID) == HIGH;
+      log_debug("%s reads %s", pinName, statusString(isHigh));
+      return isHigh;
+    }
+
     // --- Sense helpers ---
     bool fanLoCall()    { return readPin("Fan Lo", pinFanLoSense); }
     bool fanHiCall()    { return readPin("Fan Hi", pinFanHiSense); }
@@ -373,14 +371,14 @@ public:
       log_debug("Setting %s (%d) to %d", pinName, pinID, toNC);
       digitalWrite(pinID, toNC ? HIGH : LOW);
     }
-    void setFanLo(bool toNC)    { setPin("Fan Lo", pinFanLoOut, !toNC);  }
-    void setFanHi(bool toNC)    { setPin("Fan Hi", pinFanHiOut, !toNC); }
-    void setAC(bool toNC)       { setPin("Air Conditioner", pinACOut, !toNC); }
-    void setHeatPump(bool toNC) { setPin("Heat Pump", pinHPOut, !toNC); }
+    void passThrough_FanLo(bool toNC)    { setPin("Fan Lo", pinFanLoOut, toNC);  }
+    void passThrough_FanHi(bool toNC)    { setPin("Fan Hi", pinFanHiOut, toNC); }
+    void passThrough_AirConditioner(bool toNC)       { setPin("Air Conditioner", pinACOut, toNC); }
+    void passThrough_HeatPump(bool toNC) { setPin("Heat Pump", pinHPOut, toNC); }
 
     // --- SSR control ---
     void setSSR(bool on)        { setPin("Space Heater", pinSSR, on); }
-    void setFurnace(bool toNC)  { setPin("Furnace", FURN_OUT, !toNC);}
+    void passThrough_Furnace(bool toNC)  { setPin("Furnace", FURN_OUT, toNC);}
 
     // convert enum → readable string
     const char* roomNameString() const {
@@ -393,13 +391,13 @@ public:
     }
 
     void preferHeatPump(){
-      setFanLo(true);
-      setFanHi(true);
-      setAC(true);
-      setHeatPump(true);
+      passThrough_FanLo(true);
+      passThrough_FanHi(true);
+      passThrough_AirConditioner(true);
+      passThrough_HeatPump(true);
       setSSR(false);
       if (hasFurnace){
-        setFurnace(false);
+        passThrough_Furnace(false);
       }
     }
     void denyHeatPump(){
@@ -413,25 +411,25 @@ public:
 
       if (needsHeat){
         log_debug("%s is asking for heat", roomNameString());
-        setFanLo(false);
-        setFanHi(false);
-        setAC(false);
-        setHeatPump(false);
+        passThrough_FanLo(false);
+        passThrough_FanHi(false);
+        passThrough_AirConditioner(false);
+        passThrough_HeatPump(false);
 
         setSSR(true);
         if (hasFurnace){
-          setFurnace(true);
+          passThrough_Furnace(true);
         }
       }
       else{
         log_debug("%s is NOT asking for heat", roomNameString());
-        setFanLo(true);
-        setFanHi(true);
-        setAC(true);
-        setHeatPump(true);
+        passThrough_FanLo(true);
+        passThrough_FanHi(true);
+        passThrough_AirConditioner(true);
+        passThrough_HeatPump(true);
         setSSR(false);
         if (hasFurnace){
-          setFurnace(false);
+          passThrough_Furnace(false);
         }
       }
     }
@@ -501,10 +499,7 @@ void loop() {
 void setup() {
   Serial.begin(9600);
   log_debug("------------------------------------------------------------------------------------------");
-  #if LCD == true
-  
-    lcd.begin(16, 2);
-  #endif
+  lcd.begin(16, 2);
   writeLCD(FIRST_LINE, "Initializing");
 
   Zone1.begin();
