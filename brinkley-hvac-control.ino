@@ -31,10 +31,16 @@ void log_debug(const char* fmt, ...){
   Serial.println(buffer);
 }
 
+const char* statusString(bool isHigh) {
+  return isHigh ? "High" : "Low";
+}
+
 #ifndef CONSTANTS
-  #define HEAT_PUMP_THRESHOLD 32
-  #define UNDERBELLY_TEMP_THRESHOLD 50
-  #define LOOP_DELAY_MS 100
+  #define HEAT_PUMP_THRESHOLD_F 32
+  #define UNDERBELLY_TEMP_THRESHOLD_F 50
+  
+  // Must be > 750 ms for Dallas Temp sensors to work properly
+  const int LOOP_DELAY_MS = 800; // Dallas sensors: 750ms + 50ms buffer
 
   #pragma region LCD
     #define btnNONE 0
@@ -191,8 +197,6 @@ void log_debug(const char* fmt, ...){
           }
           break;
       }
-
-
     }
 
     void writeError(int line, uint8_t value) {
@@ -252,19 +256,23 @@ void log_debug(const char* fmt, ...){
     // After we got the temperatures, we can print them here.
     // We use the function ByIndex, and as an example get the temperature from the first sensor only.
     DeviceAddress* address = getAddress(t);
-    int temperature = static_cast<int>(round(sensors.getTempF(*address)));
-
+    if (!address) {
+      log_debug("Error: Invalid thermometer %d", (int)t);
+      return -999;
+    }
+    float temperature = sensors.getTempF(*address);
+    int tempInt = static_cast<int>(round(temperature));
     // Check if reading was successful
     if (temperature != DEVICE_DISCONNECTED_F)
     {
-      log_debug("Temperature for %s is %d",getName(t), temperature);
+      log_debug("Temperature for %s is %d", getName(t), tempInt);
     }
     else
     {
       log_debug("Error: Could not read temperature data");
     }
 
-    return temperature;
+    return tempInt;
   }
 
   void printAddress(Thermometer t) {
@@ -278,6 +286,8 @@ void log_debug(const char* fmt, ...){
 
   void startSensors(){
     sensors.begin();
+    sensors.requestTemperatures();
+    delay(LOOP_DELAY_MS);
   }
 
 #pragma endregion
@@ -341,16 +351,12 @@ public:
         // SSR output
         pinMode(pinSSR, OUTPUT);
 
-        // Initialize all outputs LOW (relays de‑energized → NC pass‑through)
-        digitalWrite(pinFanLoOut, LOW);
-        digitalWrite(pinFanHiOut, LOW);
-        digitalWrite(pinACOut,    LOW);
-        digitalWrite(pinHPOut,    LOW);
-        digitalWrite(pinSSR,      LOW);
-    }
-
-    const char* statusString(bool isHigh) {
-      return isHigh ? "High" : "Low";
+        // Initialize all outputs HIGH (relays de‑energized → NC pass‑through)
+        digitalWrite(pinFanLoOut, HIGH);
+        digitalWrite(pinFanHiOut, HIGH);
+        digitalWrite(pinACOut,    HIGH);
+        digitalWrite(pinHPOut,    HIGH);
+        digitalWrite(pinSSR,      HIGH);
     }
 
     bool readPin(char* pinName, int pinID) {
@@ -391,15 +397,19 @@ public:
     }
 
     void preferHeatPump(){
+      // Allow all calls to pass through
       passThrough_FanLo(true);
       passThrough_FanHi(true);
       passThrough_AirConditioner(true);
       passThrough_HeatPump(true);
+
+      // but disable the SSR and furnace
       setSSR(false);
       if (hasFurnace){
         passThrough_Furnace(false);
       }
     }
+
     void denyHeatPump(){
       bool needsHeat = false;
       if (hasFurnace){
@@ -450,11 +460,11 @@ public:
       int underbellyTemp  = retrieveTemperature(Thermometer::Underbelly);
       int thirdTemp       = retrieveTemperature(Thermometer::Third);
 
-      writeLCD(FIRST_LINE, "Out:%2d", outdoorTemp);
-      writeLCD(SECOND_LINE, "Under:%2d", underbellyTemp);
+      writeLCD(FIRST_LINE, "Out: %d", outdoorTemp);
+      writeLCD(SECOND_LINE, "Under: %d", underbellyTemp);
 
-      bool shouldRunHeatPumps = outdoorTemp >= HEAT_PUMP_THRESHOLD;
-      bool underbellyNeedsHeat = underbellyTemp < UNDERBELLY_TEMP_THRESHOLD;
+      bool shouldRunHeatPumps = outdoorTemp >= HEAT_PUMP_THRESHOLD_F;
+      bool underbellyNeedsHeat = underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F;
       log_debug("------------------");
       log_debug("Adjusting %s", roomNameString());
       
@@ -480,17 +490,17 @@ public:
 
 
 void loop() {
+  delay(LOOP_DELAY_MS);
+  
   log_debug("------------------------------------------------------------------------------------------");
   #if LCD == true
     handleButtonPress();
   #endif
-  delay(LOOP_DELAY_MS);
-  sensors.requestTemperatures();
-      
   Zone1.Adjust();
   Zone2.Adjust();
   Zone3.Adjust();
 
+  sensors.requestTemperatures();
   
 }
 
@@ -506,6 +516,10 @@ void setup() {
   Zone2.begin();
   Zone3.begin();
 
+
+  pinMode(FURN_SENSE,     INPUT_PULLUP);
+  pinMode(FURN_OUT,       OUTPUT);
+  digitalWrite(FURN_OUT,  HIGH);
   log_debug("Pins Off");
   
   startSensors();
