@@ -36,7 +36,9 @@ const char* statusString(bool isHigh) {
 }
 
 #ifndef CONSTANTS
-  #define HEAT_PUMP_THRESHOLD_F 32
+  #define HEAT_PUMP_THRESHOLD_F 34
+  #define HEAT_PUMP_HYSTERESIS_LOWER_F 33  // Turn OFF heat pump below this
+  #define HEAT_PUMP_HYSTERESIS_UPPER_F 35  // Turn ON heat pump above this
   #define UNDERBELLY_TEMP_THRESHOLD_F 50
   
   // Must be > 750 ms for Dallas Temp sensors to work properly
@@ -316,6 +318,9 @@ public:
     // Whether this HVAC instance uses a furnace
     bool hasFurnace;
 
+    // Track the current heating mode state for hysteresis
+    bool isInHeatMode = false;  // Add this member variable
+
     HVAC(int startPin, bool furnaceEnabled, int ssrPin, RoomName roomName)
         : room(roomName)
     {
@@ -443,6 +448,7 @@ public:
         }
       }
     }
+
     void VerifyCalls(){
         fanLoCall();
         fanHiCall();
@@ -463,20 +469,28 @@ public:
       writeLCD(FIRST_LINE, "Out: %d", outdoorTemp);
       writeLCD(SECOND_LINE, "Under: %d", underbellyTemp);
 
-      bool shouldRunHeatPumps = outdoorTemp >= HEAT_PUMP_THRESHOLD_F;
-      bool underbellyNeedsHeat = underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F;
       log_debug("------------------");
       log_debug("Adjusting %s", roomNameString());
-      
       VerifyCalls();
+
+      bool shouldRunHeatPumps = outdoorTemp >= HEAT_PUMP_THRESHOLD_F;
+      bool underbellyNeedsHeat = underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F;
       
-      if (!shouldRunHeatPumps){
-        log_debug("It's Cold Outside, start the furnace and Space Heaters");
-        denyHeatPump();
-      }
-      else{
-        log_debug("It's warm enough, use the heat pumps");
-        preferHeatPump();
+      // Hysteresis logic: use different thresholds for on/off
+      if (isInHeatMode) {
+        // Currently in heat mode - need temp to rise above UPPER threshold to switch
+        if (outdoorTemp >= HEAT_PUMP_HYSTERESIS_UPPER_F) {
+          log_debug("Temperature rising above %dF, switching to heat pump mode", HEAT_PUMP_HYSTERESIS_UPPER_F);
+          isInHeatMode = false;
+          preferHeatPump();
+        }
+      } else {
+        // Currently in heat pump mode - need temp to drop below LOWER threshold to switch
+        if (outdoorTemp < HEAT_PUMP_HYSTERESIS_LOWER_F) {
+          log_debug("Temperature dropped below %dF, switching to furnace + space heater mode", HEAT_PUMP_HYSTERESIS_LOWER_F);
+          isInHeatMode = true;
+          denyHeatPump();
+        }
       }
 
     }
