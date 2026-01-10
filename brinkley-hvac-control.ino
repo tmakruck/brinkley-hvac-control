@@ -356,12 +356,13 @@ public:
         // SSR output
         pinMode(pinSSR, OUTPUT);
 
-        // Initialize all outputs HIGH (relays de‑energized → NC pass‑through)
+        // Initialize all Heat Pump outputs HIGH (relays de‑energized → NC pass‑through)
         digitalWrite(pinFanLoOut, HIGH);
         digitalWrite(pinFanHiOut, HIGH);
         digitalWrite(pinACOut,    HIGH);
         digitalWrite(pinHPOut,    HIGH);
-        digitalWrite(pinSSR,      HIGH);
+        // And turn off the SSR
+        digitalWrite(pinSSR,      LOW);
     }
 
     bool readPin(char* pinName, int pinID) {
