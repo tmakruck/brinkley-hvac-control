@@ -12,6 +12,12 @@ using namespace std;
 
 bool debugState = false;
 bool deepDebug = true;
+int outdoorTemp = 100;
+int underbellyTemp = 100;
+int thirdTemp = 100;
+unsigned long temperatureReadTimer = 0;
+unsigned long lastDailyResetTime = 0;
+unsigned long TWENTY_FOUR_HOURS_MS = 86400000UL;  // 24 hours in milliseconds
 
 #pragma region Enumerations
 enum class Thermometer {
@@ -179,7 +185,6 @@ const char* statusString(bool isHigh) {
   #pragma endregion Other
 #endif
 #define LCD true
-
 
 #pragma region Menu Setup
   #if LCD == true  //menu setup
@@ -418,6 +423,16 @@ public:
     bool isHeatPumpCall = false;
     bool isFurnaceCall  = false;
 
+    // track current control status
+    bool is_passthough_fanLo = true;
+    bool is_passthrough_fanHi = true;
+    bool is_passthrough_AC = true;
+    bool is_passthrough_HP   = true;
+    bool is_passthrough_Furnace = true;
+    bool is_SSROn = false;
+    bool is_furnace_12V_ON = false;
+    bool is_heatPump_12V_ON = false;
+
     // Whether this HVAC instance uses a furnace
     bool hasFurnace;
 
@@ -565,25 +580,28 @@ public:
         if (hasFurnace){
           isFurnaceCall = furnaceCall();
         }
+
     }
 
     void VerifyOutputs(){
-        read_fanLoOut();
-        read_fanHiOut();
-        read_acOut();
-        read_heatPumpOut();
+        is_passthrough_fanLo = read_fanLoOut();
+        is_passthrough_fanHi = read_fanHiOut();
+        is_passthrough_AC = read_acOut();
+        is_passthrough_HP = read_heatPumpOut();
         if (hasFurnace) { 
-          read_HeatPumpPower();
-          read_furnaceOut(); 
-          read_furnacePower();
+          is_heatPump_12V_ON = read_HeatPumpPower();
+          is_passthrough_Furnace = read_furnaceOut(); 
+          is_furnace_12V_ON = read_furnacePower();
         }
-        read_ssrOut();
+        is_SSROn = read_ssrOut();
+
+
     }
     
     void printPinStates() {
       VerifyOutputs();
       
-      /*
+      
       char zoneHeatPumpStatus[LCD_LINE_LENGTH] = {};
       for (int i = 0; i < LCD_LINE_LENGTH; i++) {
         zoneHeatPumpStatus[i] = ' ';
@@ -599,16 +617,16 @@ public:
         zoneHeatPumpStatus[1] = 'H';
       }
       else if (!isHeatPumpCall) {
-        zoneHeatPumpStatus[1] = 'N';
+        zoneHeatPumpStatus[1] = '-';
       }
       else {
         zoneHeatPumpStatus[1] = 'U';
       }
 
-      if(isSSROn) {
-        zoneHeatPumpStatus[2] = '-'; // Space Heater is ON
-      } else if(isHPPassthorugh) {
-        zoneHeatPumpStatus[2] = '-'; // Heat Pump is PassThrough
+      if(is_SSROn) {
+        zoneHeatPumpStatus[2] = 'S'; // Space Heater is ON
+      } else if(is_passthrough_HP) {
+        zoneHeatPumpStatus[2] = 'P'; // Heat Pump is PassThrough
       } else {
         zoneHeatPumpStatus[2] = '-'; // assume its low, nothing is on
       }
@@ -617,10 +635,10 @@ public:
 
       log_info("Zone status: %s", zoneHeatPumpStatus);
       writeLCD(SECOND_LINE, 4*zoneID-4, zoneHeatPumpStatus);
-      */
+      
     }
 
-    void ApplyCallForHeat(int underbellyTemp){
+    void ApplyCallForHeat(){
       bool furnaceCallActive = hasFurnace && isFurnaceCall;
       bool heatPumpCallActive = isHeatPumpCall;
       bool underbellyTooCold = hasFurnace && underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F;
@@ -687,7 +705,7 @@ public:
       }
     }
     // --- Make appropriate adjustments ---
-    void Adjust(int outdoorTemp, int underbellyTemp){
+    void Adjust(){
       log_debug("------------------");
       log_debug("Adjusting %s", roomNameString());
       VerifyCalls();
@@ -707,7 +725,7 @@ public:
         }
       }
 
-      ApplyCallForHeat(underbellyTemp);
+      ApplyCallForHeat();
       printPinStates();
     }
 };
@@ -718,13 +736,6 @@ public:
   HVAC Zone3(ZONE3_START, !controlsFurnace, SSR3_HEAT, GARAGE, 3);
 #pragma endregion
 
-unsigned long temperatureReadTimer = 0;
-unsigned long lastDailyResetTime = 0;
-unsigned long TWENTY_FOUR_HOURS_MS = 86400000UL;  // 24 hours in milliseconds
-
-int outdoorTemp = 100;
-int underbellyTemp = 100;
-int thirdTemp = 100;
 void loop() {
   unsigned long currentTime = millis();
   // Reset timer every 24 hours
@@ -753,9 +764,9 @@ void loop() {
     handleButtonPress();
   #endif
   
-  Zone1.Adjust(outdoorTemp, underbellyTemp);
-  //Zone2.Adjust(outdoorTemp, underbellyTemp);
-  //Zone3.Adjust(outdoorTemp, underbellyTemp);
+  Zone1.Adjust();
+  //Zone2.Adjust();
+  //Zone3.Adjust();
 
 }
 
