@@ -584,7 +584,7 @@ public:
     }
 
     void VerifyOutputs(){
-        is_passthrough_fanLo = read_fanLoOut();
+        is_passthough_fanLo = read_fanLoOut();
         is_passthrough_fanHi = read_fanHiOut();
         is_passthrough_AC = read_acOut();
         is_passthrough_HP = read_heatPumpOut();
@@ -765,8 +765,8 @@ void loop() {
   #endif
   
   Zone1.Adjust();
-  //Zone2.Adjust();
-  //Zone3.Adjust();
+  Zone2.Adjust();
+  Zone3.Adjust();
 
 }
 
