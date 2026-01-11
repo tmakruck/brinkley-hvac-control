@@ -10,6 +10,8 @@
 using namespace Menu;
 using namespace std;
 
+bool debugState = false;
+
 enum class Thermometer {
   Outside,
   Underbelly, 
@@ -23,6 +25,8 @@ enum RoomName {
 };
 
 void log_debug(const char* fmt, ...){
+  if (!debugState) return;
+
   char buffer[128];
   va_list args;
   va_start(args, fmt);
@@ -30,6 +34,8 @@ void log_debug(const char* fmt, ...){
   va_end(args);
   Serial.println(buffer);
 }
+
+
 
 const char* statusString(bool isHigh) {
   return isHigh ? "High" : "Low";
@@ -108,7 +114,7 @@ const char* statusString(bool isHigh) {
     byte key_press_debounce_count = 10;  // number of millis/samples to consider before declaring a debounced input
     byte current_state = 0;              // the debounced input value
     bool navigateMenu = false;
-    bool debugState = false;
+    
     
     TOGGLE(debugState, debugMenu, "Debug: ", doNothing, noEvent, wrapStyle,
           VALUE("No", true, doNothing, noEvent),
@@ -221,6 +227,14 @@ const char* statusString(bool isHigh) {
         lcd.print(stringBuffer);
       #endif
     }
+
+    void writeLCD(int line, int position, const char *input) {
+
+      #if LCD == true
+        lcd.setCursor(position, line);
+        lcd.print(input);
+      #endif
+    }
   #endif  //menu setup
 #pragma endregion
 
@@ -314,6 +328,7 @@ public:
 
     // SSR output pin
     int pinSSR;
+    bool isSSROn = false;
 
     // Whether this HVAC instance uses a furnace
     bool hasFurnace;
@@ -321,9 +336,12 @@ public:
     // Track the current heating mode state for hysteresis
     bool isInHeatMode = false;  // Add this member variable
 
-    HVAC(int startPin, bool furnaceEnabled, int ssrPin, RoomName roomName)
+    int zoneID=0;
+
+    HVAC(int startPin, bool furnaceEnabled, int ssrPin, RoomName roomName, int zoneID)
         : room(roomName)
     {
+        this->zoneID = zoneID;
         hasFurnace = furnaceEnabled;
         pinSSR = ssrPin;
 
@@ -389,7 +407,7 @@ public:
     void passThrough_HeatPump(bool toNC) { setPin("Heat Pump", pinHPOut, toNC); }
 
     // --- SSR control ---
-    void setSSR(bool on)        { setPin("Space Heater", pinSSR, on); }
+    void setSSR(bool on)        { isSSROn = on; setPin("Space Heater", pinSSR, on); }
     void passThrough_Furnace(bool toNC)  { setPin("Furnace", FURN_OUT, toNC);}
 
     // convert enum → readable string
@@ -460,6 +478,43 @@ public:
         }
     }
     
+    void printPinStates() {
+      char zoneHeatPumpStatus[LCD_LINE_LENGTH] = {};
+      for (int i = 0; i < LCD_LINE_LENGTH; i++) {
+        zoneHeatPumpStatus[i] = ' ';
+      }
+
+     // log_debug("Zone status: %s", zoneHeatPumpStatus);
+      
+      zoneHeatPumpStatus[0] = ('0' + zoneID); // Zone ID as char
+      if (hasFurnace && furnaceCall()) {
+        zoneHeatPumpStatus[1] = 'F';
+      }
+      else if (heatPumpCall()) {
+        zoneHeatPumpStatus[1] = 'H';
+      }
+      else if (!heatPumpCall()) {
+        zoneHeatPumpStatus[1] = 'N';
+      }
+      else {
+        zoneHeatPumpStatus[1] = 'U';
+      }
+
+      if(isSSROn) {
+        zoneHeatPumpStatus[2] = 'S'; // Space Heater is ON
+      } else if(digitalRead(pinHPOut) == HIGH) {
+        zoneHeatPumpStatus[2] = 'P'; // Heat Pump is PassThrough
+      } else {
+        zoneHeatPumpStatus[2] = 'N'; // assume its low, nothing is on
+      }
+
+      zoneHeatPumpStatus[3] = '\0'; // Null-terminate the string
+
+      log_debug("Zone status: %s", zoneHeatPumpStatus);
+      writeLCD(SECOND_LINE, 4*zoneID-4, zoneHeatPumpStatus);
+
+    }
+
     // --- Make appropriate adjustments ---
     void Adjust(){
       log_debug("Requesting temperatures...");
@@ -467,9 +522,7 @@ public:
       int underbellyTemp  = retrieveTemperature(Thermometer::Underbelly);
       int thirdTemp       = retrieveTemperature(Thermometer::Third);
 
-      writeLCD(FIRST_LINE, "Out: %d", outdoorTemp);
-      writeLCD(SECOND_LINE, "Under: %d", underbellyTemp);
-
+      writeLCD(FIRST_LINE, "O:%d  U:%d", outdoorTemp, underbellyTemp);
       log_debug("------------------");
       log_debug("Adjusting %s", roomNameString());
       VerifyCalls();
@@ -494,13 +547,14 @@ public:
         }
       }
 
+      printPinStates();
     }
 };
 
   bool controlsFurnace = true;
-  HVAC Zone1(ZONE1_START, controlsFurnace, SSR1_HEAT, BEDROOM);  
-  HVAC Zone2(ZONE2_START, !controlsFurnace, SSR2_HEAT, LIVING_ROOM);  
-  HVAC Zone3(ZONE3_START, !controlsFurnace, SSR3_HEAT, GARAGE);
+  HVAC Zone1(ZONE1_START, controlsFurnace, SSR1_HEAT, BEDROOM, 1);  
+  HVAC Zone2(ZONE2_START, !controlsFurnace, SSR2_HEAT, LIVING_ROOM, 2);  
+  HVAC Zone3(ZONE3_START, !controlsFurnace, SSR3_HEAT, GARAGE, 3);
 #pragma endregion
 
 
@@ -539,6 +593,6 @@ void setup() {
   
   startSensors();
 
-  writeLCD(SECOND_LINE, "Pins Set");
+  writeLCD(SECOND_LINE, " ");
 
 }
