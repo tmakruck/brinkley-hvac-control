@@ -11,7 +11,9 @@ using namespace Menu;
 using namespace std;
 
 bool debugState = false;
+bool deepDebug = true;
 
+#pragma region Enumerations
 enum class Thermometer {
   Outside,
   Underbelly, 
@@ -24,6 +26,80 @@ enum RoomName {
     GARAGE
 };
 
+enum OutputState {
+  Passthrough = HIGH,
+  NoPassthrough = LOW
+};
+
+enum PowerState {
+  Supply12V = LOW,
+  NoSupply12V = HIGH
+};
+
+enum SSRState {
+  SSROn = HIGH,
+  SSROff = LOW
+};
+
+const char* getOutputStateName(OutputState t) {
+  log_debug("Getting name for OutputState %d", (int)t);
+  switch (t) {
+    case OutputState::Passthrough:    return "Passthrough";
+    case OutputState::NoPassthrough:  return "Use Custom Control";
+    default:                          return "Unknown";
+  }
+}
+const char* getOutputStateName(PowerState t) {
+  log_debug("Getting name for PowerState %d", (int)t);
+  switch (t) {
+    case PowerState::Supply12V:      return "Supply 12V";
+    case PowerState::NoSupply12V:    return "Don't Supply 12V";
+    default:                         return "Unknown";
+  }
+}
+const char* getOutputStateName(SSRState t) {
+  log_debug("Getting name for SSRState %d", (int)t);
+  switch (t) {
+    case SSRState::SSROn:          return "SSR On";
+    case SSRState::SSROff:         return "SSR Off";
+  }
+}
+
+const int getOutputStateValue(OutputState t) {
+  switch (t) {
+    case OutputState::Passthrough:    return HIGH;
+    case OutputState::NoPassthrough:  return LOW;
+    default:                          return -1;
+  }
+}
+const int getOutputStateValue(PowerState t) {
+  switch (t) {
+    case PowerState::Supply12V:      return LOW;
+    case PowerState::NoSupply12V:    return HIGH;
+    default:                         return -1;
+  }
+}
+const int getOutputStateValue(SSRState t) {
+  switch (t) {
+    case SSRState::SSROn:          return HIGH;
+    case SSRState::SSROff:         return LOW;
+    default:                       return -1;
+  }
+}
+
+#pragma endregion
+
+#pragma region logging
+
+void log_info(const char* fmt, ...){
+  char buffer[128];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buffer, sizeof(buffer), fmt, args);
+  va_end(args);
+  Serial.println(buffer);
+}
+
 void log_debug(const char* fmt, ...){
   if (!debugState) return;
 
@@ -35,16 +111,15 @@ void log_debug(const char* fmt, ...){
   Serial.println(buffer);
 }
 
-
-
 const char* statusString(bool isHigh) {
   return isHigh ? "High" : "Low";
 }
 
+#pragma endregion 
+
 #ifndef CONSTANTS
-  #define HEAT_PUMP_THRESHOLD_F 34
-  #define HEAT_PUMP_HYSTERESIS_LOWER_F 33  // Turn OFF heat pump below this
-  #define HEAT_PUMP_HYSTERESIS_UPPER_F 35  // Turn ON heat pump above this
+  #define HEAT_PUMP_HYSTERESIS_LOWER_F 34  // Turn OFF heat pump below this
+  #define HEAT_PUMP_HYSTERESIS_UPPER_F 36  // Turn ON heat pump above this
   #define UNDERBELLY_TEMP_THRESHOLD_F 50
   
   // Must be > 750 ms for Dallas Temp sensors to work properly
@@ -68,7 +143,7 @@ const char* statusString(bool isHigh) {
   #pragma endregion Menu
 
   #pragma region Pin Definitions
-    #pragma region LCD
+    #pragma region LCD Pins
       #define D04_LCD_DataPin0 4
       #define D05_LCD_DataPin1 5
       #define D06_LCD_DataPin2 6
@@ -83,23 +158,25 @@ const char* statusString(bool isHigh) {
       const int SSR2_HEAT   = 19;
       const int SSR3_HEAT   = 20;
       const int Temperature_Data = 21;
-    #pragma endregion
+    #pragma endregion Custom Controls
 
-    #pragma Zone Starts
+    #pragma region Zone Pin Definitions
       const int ZONE1_START = 22;
       const int ZONE2_START = 38;
       const int ZONE3_START = 39;
 
       const int FURN_SENSE  = 23;
       const int FURN_OUT    = 31;
-    #pragma endregion
-
-    // Temperature Probes
+      const int FURN_12V    = 33;
+      const int HP_12V      = 35;
+    #pragma endregion Zone Pin Definitions
   #pragma endregion Pin Definitions
 
-  #define SpaceHeater HIGH
-  #define DefaultBehavior LOW
-  #define CONSTANTS // To consider it initialized
+  #pragma region Other
+    #define SpaceHeater HIGH
+    #define DefaultBehavior LOW
+    #define CONSTANTS // To consider it initialized
+  #pragma endregion Other
 #endif
 #define LCD true
 
@@ -133,21 +210,19 @@ const char* statusString(bool isHigh) {
 
     byte read_LCD_buttons() {          // read the buttons
       int adc_key_in = analogRead(0);  // read the value from the sensor
-
       //value read: 0(0V), 130(0.64V), 306(1.49V), 479(2.33V), 722(3.5V), 1023(4.97V)
-      int rightMax = 75;
-      int downMax = 218;
-      int upMax = 392;
-      int leftMax = 600;
-      int selectMax = 800;
-      int noneMin = 1000;
-      if (adc_key_in > noneMin) return btnNONE;
-      if (adc_key_in < rightMax) return btnRIGHT;
-      if (adc_key_in < downMax) return btnDOWN;
-      if (adc_key_in < upMax) return btnUP;
-      if (adc_key_in < leftMax) return btnLEFT;
-      if (adc_key_in < selectMax) return btnSELECT;
-      return btnNONE;
+      int rightMax = 64;
+      int upMax = 128;
+      int downMax = 256;
+      int leftMax = 512;
+      int selectMax = 768;
+      if (adc_key_in<1020) log_debug("ADC Value = %d", adc_key_in);
+      if (adc_key_in <= rightMax) return btnRIGHT; // 0
+      if (adc_key_in <= upMax) return btnUP; // 99
+      if (adc_key_in <= downMax) return btnDOWN; // 256
+      if (adc_key_in <= leftMax) return btnLEFT; // 410
+      if (adc_key_in <= selectMax) return btnSELECT; //641
+      if (adc_key_in > selectMax) return btnNONE;
     }
 
     byte key_press() {
@@ -171,36 +246,43 @@ const char* statusString(bool isHigh) {
     }
 
     void handleButtonPress() {
+      //log_debug("Handling Button Presses");
       byte lcd_key = key_press();  // read the buttons
 
       switch (lcd_key) {
         case btnRIGHT:
+          log_debug("Pressed Right Button");
           nav.doNav(enterCmd);
           delay(SOFT_DEBOUNCE_MS);
           nav.doOutput();
           break;
         case btnLEFT:
+          log_debug("Pressed Left Button");
           nav.doNav(escCmd);
           delay(SOFT_DEBOUNCE_MS);
           nav.doOutput();
           // Do something like getting back to normal run mode
           break;
         case btnUP:
+          log_debug("Pressed Up Button");
           nav.doNav(upCmd);
           delay(SOFT_DEBOUNCE_MS);
           nav.doOutput();
           break;
         case btnDOWN:
+          log_debug("Pressed Down Button");
           nav.doNav(downCmd);
           delay(SOFT_DEBOUNCE_MS);
           nav.doOutput();
           break;
         case btnSELECT:
+          log_debug("Pressed Select Button");
           nav.doNav(enterCmd);
           delay(SOFT_DEBOUNCE_MS);
           nav.doOutput();
           break;
         case btnNONE:
+          //log_debug("no button press found");
           if (!navigateMenu) {
           }
           break;
@@ -328,13 +410,19 @@ public:
 
     // SSR output pin
     int pinSSR;
-    bool isSSROn = false;
+    
+    // track current call status
+    bool isFanLoCall    = false;
+    bool isFanHiCall    = false;
+    bool isACCall       = false;
+    bool isHeatPumpCall = false;
+    bool isFurnaceCall  = false;
 
     // Whether this HVAC instance uses a furnace
     bool hasFurnace;
 
     // Track the current heating mode state for hysteresis
-    bool isInHeatMode = false;  // Add this member variable
+    bool isHysteresisLowMode = false;  // Add this member variable
 
     int zoneID=0;
 
@@ -375,12 +463,12 @@ public:
         pinMode(pinSSR, OUTPUT);
 
         // Initialize all Heat Pump outputs HIGH (relays de‑energized → NC pass‑through)
-        digitalWrite(pinFanLoOut, HIGH);
-        digitalWrite(pinFanHiOut, HIGH);
-        digitalWrite(pinACOut,    HIGH);
-        digitalWrite(pinHPOut,    HIGH);
+        setFanLoRelayState(OutputState::Passthrough);
+        setFanHiRelayState(OutputState::Passthrough);
+        setACRelayState(OutputState::Passthrough);
+        setHeatPumpRelayState(OutputState::Passthrough);
         // And turn off the SSR
-        digitalWrite(pinSSR,      LOW);
+        digitalWrite(pinSSR,getOutputStateValue(SSRState::SSROff));
     }
 
     bool readPin(char* pinName, int pinID) {
@@ -390,25 +478,74 @@ public:
     }
 
     // --- Sense helpers ---
-    bool fanLoCall()    { return readPin("Fan Lo", pinFanLoSense); }
-    bool fanHiCall()    { return readPin("Fan Hi", pinFanHiSense); }
-    bool acCall()       { return readPin("Air Conditioner", pinACSense); }
-    bool heatPumpCall() { return readPin("Heat Pump", pinHPSense); }
-    bool furnaceCall() { return readPin("Furnace", FURN_SENSE); }
+    bool fanLoCall()    { return readPin("Call: Fan Lo", pinFanLoSense); }
+    bool fanHiCall()    { return readPin("Call: Fan Hi", pinFanHiSense); }
+    bool acCall()       { return readPin("Call: Air Conditioner", pinACSense); }
+    bool heatPumpCall() { return readPin("Call: Heat Pump", pinHPSense); }
+    bool furnaceCall()  { return readPin("Call: Furnace", FURN_SENSE); }
+
+    template<typename EnumType>
+    bool readPin(char* pinName, int pinID, EnumType ofEnumeration) {
+      int numericValue = digitalRead(pinID);
+      log_debug("%s raw value: %d", pinName, numericValue);
+      
+      bool isHigh = numericValue == HIGH;
+
+      // convert the numeric value to the string representation
+      EnumType enumValue = static_cast<EnumType>(numericValue);
+      log_debug("%s enum cast to int: %d", pinName, (int)enumValue);
+      
+      const char* resultingText = getOutputStateName(enumValue);
+      log_debug("%s reads %s (numeric: %d, enum: %d)", pinName, resultingText, numericValue, (int)enumValue);
+      return isHigh;
+    }
+
+    // --- Output readers ---
+    bool read_fanLoOut()      { return readPin("Output: Fan Lo", pinFanLoOut, OutputState{}); }
+    bool read_fanHiOut()      { return readPin("Output: Fan Hi", pinFanHiOut, OutputState{}); }
+    bool read_acOut()         { return readPin("Output: Air Conditioner", pinACOut, OutputState{}); }
+    bool read_heatPumpOut()   { return readPin("Output: Heat Pump", pinHPOut, OutputState{}); }
+    bool read_furnaceOut()    { return readPin("Output: Furnace", FURN_OUT, OutputState{}); }
+    bool read_furnacePower()  { return readPin("Output Power for: Furnace", FURN_12V, PowerState{}); }
+    bool read_HeatPumpPower() { return readPin("Output Power for: Heat Pump", HP_12V, PowerState{}); }
+    bool read_ssrOut()        { return readPin("Output Activate: Space Heater SSR", pinSSR, SSRState{}); }
 
     // --- Relay control helpers ---
-    void setPin(char* pinName, int pinID, bool toNC){
-      log_debug("Setting %s (%d) to %d", pinName, pinID, toNC);
-      digitalWrite(pinID, toNC ? HIGH : LOW);
+    void setPin(char* pinName, int pinID, OutputState outputState){
+      char* stateName = getOutputStateName(outputState);
+      int stateValue =  getOutputStateValue(outputState);
+      log_debug("Setting %s (%d) to %s (%d)", pinName, pinID, stateName, stateValue);
+      digitalWrite(pinID, stateValue);
     }
-    void passThrough_FanLo(bool toNC)    { setPin("Fan Lo", pinFanLoOut, toNC);  }
-    void passThrough_FanHi(bool toNC)    { setPin("Fan Hi", pinFanHiOut, toNC); }
-    void passThrough_AirConditioner(bool toNC)       { setPin("Air Conditioner", pinACOut, toNC); }
-    void passThrough_HeatPump(bool toNC) { setPin("Heat Pump", pinHPOut, toNC); }
 
+    void setPin(char* pinName, int pinID, PowerState outputState){
+      char* stateName = getOutputStateName(outputState);
+      int stateValue =  getOutputStateValue(outputState);
+      log_debug("Setting %s (%d) to %s (%d)", pinName, pinID, stateName, stateValue);
+      digitalWrite(pinID, stateValue);
+    }
+
+    void setPin(char* pinName, int pinID, SSRState outputState){
+      char* stateName = getOutputStateName(outputState);
+      int stateValue =  getOutputStateValue(outputState);
+      log_debug("Setting %s (%d) to %s (%d)", pinName, pinID, stateName, stateValue);
+      digitalWrite(pinID, stateValue);
+    }
+
+    // --- Output Controls ---
+    void setFanLoRelayState(OutputState outputState)    { setPin("Fan Lo", pinFanLoOut, outputState);  }
+    void setFanHiRelayState(OutputState outputState)    { setPin("Fan Hi", pinFanHiOut, outputState); }
+    void setACRelayState(OutputState outputState)       { setPin("Air Conditioner", pinACOut, outputState); }
+    void setHeatPumpRelayState(OutputState outputState) { setPin("Heat Pump", pinHPOut, outputState); }
+    void setFurnaceRelayState(OutputState outputState)  { setPin("Furnace", FURN_OUT, outputState); }
+    
     // --- SSR control ---
-    void setSSR(bool on)        { isSSROn = on; setPin("Space Heater", pinSSR, on); }
-    void passThrough_Furnace(bool toNC)  { setPin("Furnace", FURN_OUT, toNC);}
+    void setSSR(SSRState ssrState)                      { setPin("Space Heater", pinSSR, ssrState); }
+
+    // --- Power Controls ---
+    void setFurnacePowerRelayState(PowerState powerState)   { setPin("Manual Furnace Power", FURN_12V, powerState); } 
+    void setHeatPumpPowerRelayState(PowerState powerState)  { setPin("Manual Heat Pump Power", HP_12V, powerState); }
+
 
     // convert enum → readable string
     const char* roomNameString() const {
@@ -420,65 +557,33 @@ public:
         }
     }
 
-    void preferHeatPump(){
-      // Allow all calls to pass through
-      passThrough_FanLo(true);
-      passThrough_FanHi(true);
-      passThrough_AirConditioner(true);
-      passThrough_HeatPump(true);
-
-      // but disable the SSR and furnace
-      setSSR(false);
-      if (hasFurnace){
-        passThrough_Furnace(false);
-      }
-    }
-
-    void denyHeatPump(){
-      bool needsHeat = false;
-      if (hasFurnace){
-        needsHeat = heatPumpCall() || furnaceCall();
-      }
-      else{
-        needsHeat = heatPumpCall();
-      }
-
-      if (needsHeat){
-        log_debug("%s is asking for heat", roomNameString());
-        passThrough_FanLo(false);
-        passThrough_FanHi(false);
-        passThrough_AirConditioner(false);
-        passThrough_HeatPump(false);
-
-        setSSR(true);
-        if (hasFurnace){
-          passThrough_Furnace(true);
-        }
-      }
-      else{
-        log_debug("%s is NOT asking for heat", roomNameString());
-        passThrough_FanLo(true);
-        passThrough_FanHi(true);
-        passThrough_AirConditioner(true);
-        passThrough_HeatPump(true);
-        setSSR(false);
-        if (hasFurnace){
-          passThrough_Furnace(false);
-        }
-      }
-    }
-
     void VerifyCalls(){
-        fanLoCall();
-        fanHiCall();
-        acCall();
-        heatPumpCall();
+        isFanLoCall = fanLoCall();
+        isFanHiCall = fanHiCall();
+        isACCall = acCall();
+        isHeatPumpCall = heatPumpCall();
         if (hasFurnace){
-          furnaceCall();
+          isFurnaceCall = furnaceCall();
         }
+    }
+
+    void VerifyOutputs(){
+        read_fanLoOut();
+        read_fanHiOut();
+        read_acOut();
+        read_heatPumpOut();
+        if (hasFurnace) { 
+          read_HeatPumpPower();
+          read_furnaceOut(); 
+          read_furnacePower();
+        }
+        read_ssrOut();
     }
     
     void printPinStates() {
+      VerifyOutputs();
+      
+      /*
       char zoneHeatPumpStatus[LCD_LINE_LENGTH] = {};
       for (int i = 0; i < LCD_LINE_LENGTH; i++) {
         zoneHeatPumpStatus[i] = ' ';
@@ -487,13 +592,13 @@ public:
      // log_debug("Zone status: %s", zoneHeatPumpStatus);
       
       zoneHeatPumpStatus[0] = ('0' + zoneID); // Zone ID as char
-      if (hasFurnace && furnaceCall()) {
+      if (hasFurnace && isFurnaceCall) {
         zoneHeatPumpStatus[1] = 'F';
       }
-      else if (heatPumpCall()) {
+      else if (isHeatPumpCall) {
         zoneHeatPumpStatus[1] = 'H';
       }
-      else if (!heatPumpCall()) {
+      else if (!isHeatPumpCall) {
         zoneHeatPumpStatus[1] = 'N';
       }
       else {
@@ -501,52 +606,108 @@ public:
       }
 
       if(isSSROn) {
-        zoneHeatPumpStatus[2] = 'S'; // Space Heater is ON
-      } else if(digitalRead(pinHPOut) == HIGH) {
-        zoneHeatPumpStatus[2] = 'P'; // Heat Pump is PassThrough
+        zoneHeatPumpStatus[2] = '-'; // Space Heater is ON
+      } else if(isHPPassthorugh) {
+        zoneHeatPumpStatus[2] = '-'; // Heat Pump is PassThrough
       } else {
-        zoneHeatPumpStatus[2] = 'N'; // assume its low, nothing is on
+        zoneHeatPumpStatus[2] = '-'; // assume its low, nothing is on
       }
 
       zoneHeatPumpStatus[3] = '\0'; // Null-terminate the string
 
-      log_debug("Zone status: %s", zoneHeatPumpStatus);
+      log_info("Zone status: %s", zoneHeatPumpStatus);
       writeLCD(SECOND_LINE, 4*zoneID-4, zoneHeatPumpStatus);
-
+      */
     }
 
-    // --- Make appropriate adjustments ---
-    void Adjust(){
-      log_debug("Requesting temperatures...");
-      int outdoorTemp     = retrieveTemperature(Thermometer::Outside);
-      int underbellyTemp  = retrieveTemperature(Thermometer::Underbelly);
-      int thirdTemp       = retrieveTemperature(Thermometer::Third);
+    void ApplyCallForHeat(int underbellyTemp){
+      bool furnaceCallActive = hasFurnace && isFurnaceCall;
+      bool heatPumpCallActive = isHeatPumpCall;
+      bool underbellyTooCold = hasFurnace && underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F;
+      bool hasCallForHeat = (furnaceCallActive || heatPumpCallActive);
 
-      writeLCD(FIRST_LINE, "O:%d  U:%d", outdoorTemp, underbellyTemp);
+      log_debug("isHysteresisLowMode: %d", isHysteresisLowMode);
+        
+      if (isHysteresisLowMode){
+        // the temps are cold enough to use the space heaters
+        // control the space heater.
+        // don't pass the heat pump through
+
+        setFanLoRelayState(OutputState::NoPassthrough);
+        setFanHiRelayState(OutputState::NoPassthrough);
+        setACRelayState(OutputState::NoPassthrough);
+        setHeatPumpRelayState(OutputState::NoPassthrough);
+
+        if (hasCallForHeat){
+          setSSR(SSRState::SSROn);
+        }
+        else {
+          setSSR(SSRState::SSROff);
+        }
+
+        // control the furnace
+        if (hasCallForHeat || underbellyTooCold){
+          setFurnaceRelayState(OutputState::NoPassthrough);
+          setFurnacePowerRelayState(PowerState::Supply12V);
+        }
+        else{
+          setFurnaceRelayState(OutputState::NoPassthrough);
+          setFurnacePowerRelayState(PowerState::NoSupply12V);
+        }
+      }
+
+      else{ // NOT HysteresisLowMode
+        // never run space heater above threshold
+        // never run furnace above threshold
+        // always pass heat pump through
+        setSSR(SSRState::SSROff);
+        setFurnacePowerRelayState(PowerState::NoSupply12V);
+        
+        if (underbellyTooCold && !furnaceCallActive){
+          setFurnaceRelayState(OutputState::NoPassthrough);
+          setFurnacePowerRelayState(PowerState::Supply12V);
+        }
+        else{
+          setFurnaceRelayState(OutputState::NoPassthrough);
+          setFurnacePowerRelayState(PowerState::NoSupply12V);
+        }
+
+        if (furnaceCallActive) {
+          log_debug("Redirecting furnace call to heat pump");
+          setHeatPumpPowerRelayState(PowerState::Supply12V);
+          setFanHiRelayState(OutputState::NoPassthrough);
+          setHeatPumpRelayState(OutputState::NoPassthrough);
+        }
+        else{
+          setFanLoRelayState(OutputState::Passthrough);
+          setFanHiRelayState(OutputState::Passthrough);
+          setACRelayState(OutputState::Passthrough);
+          setHeatPumpRelayState(OutputState::Passthrough);
+        }     
+      }
+    }
+    // --- Make appropriate adjustments ---
+    void Adjust(int outdoorTemp, int underbellyTemp){
       log_debug("------------------");
       log_debug("Adjusting %s", roomNameString());
       VerifyCalls();
 
-      bool shouldRunHeatPumps = outdoorTemp >= HEAT_PUMP_THRESHOLD_F;
-      bool underbellyNeedsHeat = underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F;
-      
       // Hysteresis logic: use different thresholds for on/off
-      if (isInHeatMode) {
+      if (isHysteresisLowMode) {
         // Currently in heat mode - need temp to rise above UPPER threshold to switch
         if (outdoorTemp >= HEAT_PUMP_HYSTERESIS_UPPER_F) {
           log_debug("Temperature rising above %dF, switching to heat pump mode", HEAT_PUMP_HYSTERESIS_UPPER_F);
-          isInHeatMode = false;
-          preferHeatPump();
+          isHysteresisLowMode = false;
         }
       } else {
         // Currently in heat pump mode - need temp to drop below LOWER threshold to switch
         if (outdoorTemp < HEAT_PUMP_HYSTERESIS_LOWER_F) {
           log_debug("Temperature dropped below %dF, switching to furnace + space heater mode", HEAT_PUMP_HYSTERESIS_LOWER_F);
-          isInHeatMode = true;
-          denyHeatPump();
+          isHysteresisLowMode = true;
         }
       }
 
+      ApplyCallForHeat(underbellyTemp);
       printPinStates();
     }
 };
@@ -557,20 +718,45 @@ public:
   HVAC Zone3(ZONE3_START, !controlsFurnace, SSR3_HEAT, GARAGE, 3);
 #pragma endregion
 
+unsigned long temperatureReadTimer = 0;
+unsigned long lastDailyResetTime = 0;
+unsigned long TWENTY_FOUR_HOURS_MS = 86400000UL;  // 24 hours in milliseconds
 
+int outdoorTemp = 100;
+int underbellyTemp = 100;
+int thirdTemp = 100;
 void loop() {
-  delay(LOOP_DELAY_MS);
-  
-  log_debug("------------------------------------------------------------------------------------------");
+  unsigned long currentTime = millis();
+  // Reset timer every 24 hours
+  if (currentTime - lastDailyResetTime >= TWENTY_FOUR_HOURS_MS) {
+    log_debug("Resetting daily timer");
+    temperatureReadTimer = 0;
+    lastDailyResetTime = currentTime;
+  }
+
+  unsigned long timeDiff = currentTime - temperatureReadTimer;
+  // Check if 10 seconds (10000 ms) have passed since last read
+  if (timeDiff >= 10000) {
+    log_debug("current Time: %lu minus %lu = %lu", currentTime, temperatureReadTimer, timeDiff);
+    log_info("Requesting temperatures...");
+    outdoorTemp     = retrieveTemperature(Thermometer::Outside);
+    underbellyTemp  = retrieveTemperature(Thermometer::Underbelly);
+    thirdTemp       = retrieveTemperature(Thermometer::Third);
+
+    writeLCD(FIRST_LINE, "O:%d  U:%d", outdoorTemp, underbellyTemp);
+
+    sensors.requestTemperatures();
+    temperatureReadTimer = currentTime;  // Reset the timer
+  }
+
   #if LCD == true
     handleButtonPress();
   #endif
-  Zone1.Adjust();
-  Zone2.Adjust();
-  Zone3.Adjust();
-
-  sensors.requestTemperatures();
   
+  Zone1.Adjust(outdoorTemp, underbellyTemp);
+  //Zone2.Adjust(outdoorTemp, underbellyTemp);
+  //Zone3.Adjust(outdoorTemp, underbellyTemp);
+
 }
 
 
@@ -589,9 +775,14 @@ void setup() {
   pinMode(FURN_SENSE,     INPUT_PULLUP);
   pinMode(FURN_OUT,       OUTPUT);
   digitalWrite(FURN_OUT,  HIGH);
-  log_debug("Pins Off");
+  pinMode(FURN_12V,       OUTPUT);
+  digitalWrite(FURN_12V,  HIGH);
+  pinMode(HP_12V,         OUTPUT);
+  digitalWrite(HP_12V,    HIGH);
   
   startSensors();
+  temperatureReadTimer = millis()-20000;  // Initialize timer
+  lastDailyResetTime = millis()-20000;    // Initialize daily reset timer
 
   writeLCD(SECOND_LINE, " ");
 
