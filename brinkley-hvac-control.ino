@@ -12,6 +12,7 @@ using namespace std;
 
 bool debugState = false;
 bool deepDebug = true;
+bool isHysteresisLowMode = false;
 int outdoorTemp = 100;
 int underbellyTemp = 100;
 int thirdTemp = 100;
@@ -300,18 +301,19 @@ const char* statusString(bool isHigh) {
       writeLCD(line, stringBuffer);
     }
 
-    void writeLCD(int line, char *format, int value1, int value2 = -1) {
-      char stringBuffer[LCD_LINE_LENGTH] = {};
-      snprintf(stringBuffer, LCD_LINE_LENGTH, format, value1, value2);
-      writeLCD(line, stringBuffer);
-    }
 
-    void writeLCD(int line, char *input) {
-      char stringBuffer[LCD_LINE_LENGTH] = {};
-      snprintf(stringBuffer, sizeof(stringBuffer), "%-16s", input);
+    void writeLCD(int line, char* fmt, ...){
+      char buffer[LCD_LINE_LENGTH] = {};
+      va_list args;
+      va_start(args, fmt);
+      vsnprintf(buffer, sizeof(buffer), fmt, args);
+      va_end(args);
+
+      snprintf(buffer, sizeof(buffer), "%-16s", buffer);
+      
       #if LCD == true
         lcd.setCursor(0, line);
-        lcd.print(stringBuffer);
+        lcd.print(buffer);
       #endif
     }
 
@@ -430,14 +432,12 @@ public:
     bool is_passthrough_HP   = true;
     bool is_passthrough_Furnace = true;
     bool is_SSROn = false;
-    bool is_furnace_12V_ON = false;
-    bool is_heatPump_12V_ON = false;
+    bool is_furnace_12V_Bypassed = false;
+    bool is_heatPump_12V_Bypassed = true;
 
     // Whether this HVAC instance uses a furnace
     bool hasFurnace;
 
-    // Track the current heating mode state for hysteresis
-    bool isHysteresisLowMode = false;  // Add this member variable
 
     int zoneID=0;
 
@@ -589,9 +589,9 @@ public:
         is_passthrough_AC = read_acOut();
         is_passthrough_HP = read_heatPumpOut();
         if (hasFurnace) { 
-          is_heatPump_12V_ON = read_HeatPumpPower();
+          is_heatPump_12V_Bypassed = read_HeatPumpPower();
           is_passthrough_Furnace = read_furnaceOut(); 
-          is_furnace_12V_ON = read_furnacePower();
+          is_furnace_12V_Bypassed = read_furnacePower();
         }
         is_SSROn = read_ssrOut();
 
@@ -607,8 +607,6 @@ public:
         zoneHeatPumpStatus[i] = ' ';
       }
 
-     // log_debug("Zone status: %s", zoneHeatPumpStatus);
-      
       zoneHeatPumpStatus[0] = ('0' + zoneID); // Zone ID as char
       if (hasFurnace && isFurnaceCall) {
         zoneHeatPumpStatus[1] = 'F';
@@ -626,16 +624,47 @@ public:
       if(is_SSROn) {
         zoneHeatPumpStatus[2] = 'S'; // Space Heater is ON
       } else if(is_passthrough_HP) {
-        zoneHeatPumpStatus[2] = 'P'; // Heat Pump is PassThrough
-      } else {
+        // Heat Pump is PassThrough
+        if (is_heatPump_12V_Bypassed){
+          zoneHeatPumpStatus[2] = 'P'; 
+        }
+        else
+        {
+          zoneHeatPumpStatus[2] = 'C'; // But still using custom power
+        }
+      } else if(!is_passthrough_HP) {
+        if (is_heatPump_12V_Bypassed) {
+          
+          zoneHeatPumpStatus[2] = 'X'; // Heat Pump is not powered
+        } else {
+          zoneHeatPumpStatus[2] = 'H'; // power passed to heat pump
+        }
+      } else if (hasFurnace && underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F && !isFurnaceCall) {
+        zoneHeatPumpStatus[2] = 'U'; // Underbelly too cold
+      } 
+      else {
         zoneHeatPumpStatus[2] = '-'; // assume its low, nothing is on
       }
 
       zoneHeatPumpStatus[3] = '\0'; // Null-terminate the string
 
-      log_info("Zone status: %s", zoneHeatPumpStatus);
+      log_debug("Zone status: %s", zoneHeatPumpStatus);
       writeLCD(SECOND_LINE, 4*zoneID-4, zoneHeatPumpStatus);
       
+    }
+
+    void fallbackToDefaultBehavior(){
+      log_debug("Falling back to default behavior for %s", roomNameString());
+      setFanLoRelayState(OutputState::Passthrough);
+      setFanHiRelayState(OutputState::Passthrough);
+      setACRelayState(OutputState::Passthrough);
+      setHeatPumpRelayState(OutputState::Passthrough);
+      setSSR(SSRState::SSROff);
+      if (hasFurnace){
+        setFurnaceRelayState(OutputState::Passthrough);
+        setFurnacePowerRelayState(PowerState::NoSupply12V);
+        setHeatPumpPowerRelayState(PowerState::NoSupply12V);
+      }
     }
 
     void ApplyCallForHeat(){
@@ -643,9 +672,7 @@ public:
       bool heatPumpCallActive = isHeatPumpCall;
       bool underbellyTooCold = hasFurnace && underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F;
       bool hasCallForHeat = (furnaceCallActive || heatPumpCallActive);
-
-      log_debug("isHysteresisLowMode: %d", isHysteresisLowMode);
-        
+  
       if (isHysteresisLowMode){
         // the temps are cold enough to use the space heaters
         // control the space heater.
@@ -657,20 +684,20 @@ public:
         setHeatPumpRelayState(OutputState::NoPassthrough);
 
         if (hasCallForHeat){
+          // turn on the ssr for the zone
           setSSR(SSRState::SSROn);
+          // 
+          if(hasFurnace) {
+            setFurnaceRelayState(OutputState::Passthrough);
+            setFurnacePowerRelayState(PowerState::NoSupply12V);
+          }
         }
         else {
           setSSR(SSRState::SSROff);
-        }
-
-        // control the furnace
-        if (hasCallForHeat || underbellyTooCold){
-          setFurnaceRelayState(OutputState::NoPassthrough);
-          setFurnacePowerRelayState(PowerState::Supply12V);
-        }
-        else{
-          setFurnaceRelayState(OutputState::NoPassthrough);
-          setFurnacePowerRelayState(PowerState::NoSupply12V);
+          if (hasFurnace && underbellyTooCold){
+            setFurnaceRelayState(OutputState::NoPassthrough);
+            setFurnacePowerRelayState(PowerState::Supply12V);
+          }
         }
       }
 
@@ -679,28 +706,40 @@ public:
         // never run furnace above threshold
         // always pass heat pump through
         setSSR(SSRState::SSROff);
-        setFurnacePowerRelayState(PowerState::NoSupply12V);
         
-        if (underbellyTooCold && !furnaceCallActive){
-          setFurnaceRelayState(OutputState::NoPassthrough);
-          setFurnacePowerRelayState(PowerState::Supply12V);
-        }
-        else{
-          setFurnaceRelayState(OutputState::NoPassthrough);
-          setFurnacePowerRelayState(PowerState::NoSupply12V);
-        }
-
         if (furnaceCallActive) {
           log_debug("Redirecting furnace call to heat pump");
           setHeatPumpPowerRelayState(PowerState::Supply12V);
           setFanHiRelayState(OutputState::NoPassthrough);
           setHeatPumpRelayState(OutputState::NoPassthrough);
+          //setFurnaceRelayState(OutputState::NoPassthrough);
+          setFurnaceRelayState(OutputState::NoPassthrough);
+
+          if (underbellyTooCold) {
+            setFurnacePowerRelayState(PowerState::Supply12V);
+          } else {
+            setFurnacePowerRelayState(PowerState::NoSupply12V);
+          }
+          
         }
         else{
           setFanLoRelayState(OutputState::Passthrough);
           setFanHiRelayState(OutputState::Passthrough);
           setACRelayState(OutputState::Passthrough);
           setHeatPumpRelayState(OutputState::Passthrough);
+
+          if (hasFurnace){
+            setHeatPumpPowerRelayState(PowerState::NoSupply12V);
+            if (underbellyTooCold && !isFurnaceCall){
+              setFurnaceRelayState(OutputState::NoPassthrough);
+              setFurnacePowerRelayState(PowerState::Supply12V);
+            } else {
+              setFurnaceRelayState(OutputState::Passthrough);
+              setFurnacePowerRelayState(PowerState::NoSupply12V);
+            }
+            
+          }
+
         }     
       }
     }
@@ -710,22 +749,12 @@ public:
       log_debug("Adjusting %s", roomNameString());
       VerifyCalls();
 
-      // Hysteresis logic: use different thresholds for on/off
-      if (isHysteresisLowMode) {
-        // Currently in heat mode - need temp to rise above UPPER threshold to switch
-        if (outdoorTemp >= HEAT_PUMP_HYSTERESIS_UPPER_F) {
-          log_debug("Temperature rising above %dF, switching to heat pump mode", HEAT_PUMP_HYSTERESIS_UPPER_F);
-          isHysteresisLowMode = false;
-        }
-      } else {
-        // Currently in heat pump mode - need temp to drop below LOWER threshold to switch
-        if (outdoorTemp < HEAT_PUMP_HYSTERESIS_LOWER_F) {
-          log_debug("Temperature dropped below %dF, switching to furnace + space heater mode", HEAT_PUMP_HYSTERESIS_LOWER_F);
-          isHysteresisLowMode = true;
-        }
+      if (outdoorTemp < -100 or underbellyTemp < -100) {
       }
-
-      ApplyCallForHeat();
+      else{
+        ApplyCallForHeat();
+      }
+      
       printPinStates();
     }
 };
@@ -747,15 +776,38 @@ void loop() {
 
   unsigned long timeDiff = currentTime - temperatureReadTimer;
   // Check if 10 seconds (10000 ms) have passed since last read
-  if (timeDiff >= 10000) {
+  if (timeDiff >= 5000) {
     log_debug("current Time: %lu minus %lu = %lu", currentTime, temperatureReadTimer, timeDiff);
     log_info("Requesting temperatures...");
     outdoorTemp     = retrieveTemperature(Thermometer::Outside);
     underbellyTemp  = retrieveTemperature(Thermometer::Underbelly);
     thirdTemp       = retrieveTemperature(Thermometer::Third);
 
-    writeLCD(FIRST_LINE, "O:%d  U:%d", outdoorTemp, underbellyTemp);
+    // Hysteresis logic: use different thresholds for on/off
+    if (isHysteresisLowMode) {
+      // Currently in heat mode - need temp to rise above UPPER threshold to switch
+      if (outdoorTemp >= HEAT_PUMP_HYSTERESIS_UPPER_F) {
+        log_debug("Temperature rising above %dF, switching to heat pump mode", HEAT_PUMP_HYSTERESIS_UPPER_F);
+        isHysteresisLowMode = false;
+      }
+    } else {
+      // Currently in heat pump mode - need temp to drop below LOWER threshold to switch
+      if (outdoorTemp < HEAT_PUMP_HYSTERESIS_LOWER_F) {
+        log_debug("Temperature dropped below %dF, switching to furnace + space heater mode", HEAT_PUMP_HYSTERESIS_LOWER_F);
+        isHysteresisLowMode = true;
+      }
+    }
 
+    if (outdoorTemp < -100 or underbellyTemp < -100) {
+      log_info("Invalid temperature readings detected, skipping adjustments");
+      Zone1.fallbackToDefaultBehavior();
+      Zone2.fallbackToDefaultBehavior();
+      Zone3.fallbackToDefaultBehavior();
+    }
+            
+
+    
+    writeLCD(FIRST_LINE, "O:%d%s U:%d", outdoorTemp, isHysteresisLowMode ? "L" : "H", underbellyTemp);
     sensors.requestTemperatures();
     temperatureReadTimer = currentTime;  // Reset the timer
   }
