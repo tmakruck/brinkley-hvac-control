@@ -1,0 +1,3 @@
+[ ] Use Timer to tell when to re-read the temperatures
+[ ] Use Digital Pin Interrupt instead of loops.
+[ ] preserve fan state if manually set to lo or hi instead of auto
