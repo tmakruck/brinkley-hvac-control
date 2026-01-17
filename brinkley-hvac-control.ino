@@ -694,14 +694,19 @@ public:
         }
         else {
           setSSR(SSRState::SSROff);
-          if (hasFurnace && underbellyTooCold){
-            setFurnaceRelayState(OutputState::NoPassthrough);
-            setFurnacePowerRelayState(PowerState::Supply12V);
+          if (hasFurnace){
+            if (underbellyTooCold){
+              setFurnaceRelayState(OutputState::NoPassthrough);
+              setFurnacePowerRelayState(PowerState::Supply12V);
+            }
+            else {
+              setFurnaceRelayState(OutputState::Passthrough);
+              setFurnacePowerRelayState(PowerState::NoSupply12V);
+            }
           }
         }
       }
-
-      else{ // NOT HysteresisLowMode
+      else { // NOT HysteresisLowMode
         // never run space heater above threshold
         // never run furnace above threshold
         // always pass heat pump through
