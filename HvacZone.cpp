@@ -72,15 +72,15 @@ void HVACZone::printPinStates() {
 }
 
 void HVACZone::updateOutputStates(OutputState newState){
-    this->zoneConfig.pinFanLoOut.set(newState.get(OutputState::OutputBit::FAN_LO));
-    this->zoneConfig.pinFanHiOut.set(newState.get(OutputState::OutputBit::FAN_HI));
-    this->zoneConfig.pinACOut.set(newState.get(OutputState::OutputBit::AC));
-    this->zoneConfig.pinHPOut.set(newState.get(OutputState::OutputBit::HEAT_PUMP));
-    this->zoneConfig.pinSSR.set(newState.get(OutputState::OutputBit::SSR));
+    this->zoneConfig.pinFanLoOut.set(newState.get(OutputState::Bit::FAN_LO));
+    this->zoneConfig.pinFanHiOut.set(newState.get(OutputState::Bit::FAN_HI));
+    this->zoneConfig.pinACOut.set(newState.get(OutputState::Bit::AC));
+    this->zoneConfig.pinHPOut.set(newState.get(OutputState::Bit::HEAT_PUMP));
+    this->zoneConfig.pinSSR.set(newState.get(OutputState::Bit::SSR));
     if (this->zoneConfig.hasFurnace){
-        this->zoneConfig.pinFurnaceOut.set(newState.get(OutputState::OutputBit::FURNACE));
-        this->zoneConfig.pinFurnacePower.set(newState.get(OutputState::OutputBit::FURNACE_POWER));
-        this->zoneConfig.pinHPPower.set(newState.get(OutputState::OutputBit::HEAT_PUMP_POWER));
+        this->zoneConfig.pinFurnaceOut.set(newState.get(OutputState::Bit::FURNACE));
+        this->zoneConfig.pinFurnacePower.set(newState.get(OutputState::Bit::FURNACE_POWER));
+        this->zoneConfig.pinHPPower.set(newState.get(OutputState::Bit::HEAT_PUMP_POWER));
     }
 }
 
@@ -101,13 +101,13 @@ void HVACZone::fallbackToDefaultBehavior(){
 
 void HVACZone::CalculateNewOutputState(SignalState currentSignalState){
   bool hasFurnace = this->zoneConfig.hasFurnace;
-  bool isFurnaceCall = currentSignalState.get(InputBit::FURNACE);
+  bool isFurnaceCall = currentSignalState.get(SignalState::Bit::FURNACE);
   bool furnaceCallActive = hasFurnace && isFurnaceCall;
 
-  bool isHeatPumpCall = currentSignalState.get(InputBit::HEAT_PUMP);
+  bool isHeatPumpCall = currentSignalState.get(SignalState::Bit::HEAT_PUMP);
   bool heatPumpCallActive = isHeatPumpCall;
 
-  bool underbellyTooCold = currentSignalState.get(InputBit::UNDERBELLY);
+  bool underbellyTooCold = currentSignalState.get(SignalState::Bit::UNDERBELLY);
   bool hasCallForHeat = (furnaceCallActive || heatPumpCallActive);
 
   StateType newFanLoRelayState = Passthrough;

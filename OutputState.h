@@ -3,7 +3,7 @@
 
 
 struct OutputState {
-    enum OutputBit {
+    enum Bit {
         FAN_LO          = 0,
         FAN_HI          = 1,
         AC              = 2,
@@ -43,7 +43,14 @@ struct OutputState {
         );
     }
 
-    bool get(OutputBit b) const {
+    bool get(Bit b) const {
         return (bits >> b) & 1;
     }
+
+    char encode(const OutputState& s) {
+        return static_cast<char>(s.bits + 128);
+    }
+
+    
+
 };

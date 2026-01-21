@@ -28,8 +28,8 @@ public:
     Pin pinFurnacePower = Pin();
     Pin pinHPPower = Pin();
 
-    HVACZoneConfig(char *roomName, int startPin, int pinSSR, int hysteresisSetPoint_F, int furnaceSensePin = -1, int underbellyThreshold = 100) 
-    : roomName(roomName), startPin(startPin), hysteresisSetPoint_F(hysteresisSetPoint_F), hasFurnace(furnaceSensePin != -1), underbellyThreshold(underbellyThreshold)
+    HVACZoneConfig(char *roomName, int startPin, int pinSSR, int hysteresisSetPoint_F, int furnaceSensePin = -1, int underbellyThreshold = 100)
+        : roomName(roomName), startPin(startPin), hysteresisSetPoint_F(hysteresisSetPoint_F), hasFurnace(furnaceSensePin != -1), underbellyThreshold(underbellyThreshold)
     {
         this->pinFanLoSense = Pin(startPin, "Fan Lo Sense", INPUT_PULLUP);
         this->pinFanHiSense = Pin(startPin + 2, "Fan Hi Sense", INPUT_PULLUP);
