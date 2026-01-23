@@ -780,7 +780,7 @@ public:
   HVAC Zone2(ZONE2_START, !controlsFurnace, SSR2_HEAT, LIVING_ROOM, 2);  
   HVAC Zone3(ZONE3_START, !controlsFurnace, SSR3_HEAT, GARAGE, 3);
 #pragma endregion
-
+int lastOutdoorTemp = 100;
 void loop() {
   unsigned long currentTime = millis();
   // Reset timer every 24 hours
@@ -798,7 +798,9 @@ void loop() {
     outdoorTemp     = retrieveTemperature(Thermometer::Outside);
     underbellyTemp  = retrieveTemperature(Thermometer::Underbelly);
     thirdTemp       = retrieveTemperature(Thermometer::Third);
-
+    if (outdoorTemp != lastOutdoorTemp){
+      log_info("New outdoor Temp %d", outdoorTemp);
+    }
     // Hysteresis logic: use different thresholds for on/off
     if (isHysteresisLowMode) {
       // Currently in heat mode - need temp to rise above UPPER threshold to switch
@@ -826,6 +828,7 @@ void loop() {
     writeLCD(FIRST_LINE, "O:%d%s U:%d", outdoorTemp, isHysteresisLowMode ? "L" : "H", underbellyTemp);
     sensors.requestTemperatures();
     temperatureReadTimer = currentTime;  // Reset the timer
+    lastOutdoorTemp = outdoorTemp;
   }
 
   #if LCD == true
