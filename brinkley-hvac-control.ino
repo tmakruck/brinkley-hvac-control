@@ -13,7 +13,7 @@
 using namespace Menu;
 using namespace std;
 
-bool debugState = false;
+bool debugState = true;
 bool deepDebug = true;
 bool isHysteresisLowMode = false;
 int outdoorTemp = 100;
