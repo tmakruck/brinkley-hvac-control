@@ -6,22 +6,22 @@ struct SignalState {
         FAN_HI      = 1,
         AC          = 2,
         HEAT_PUMP   = 3,
-        FURNACE     = 4, 
-        UNDERBELLY  = 5,
-        HYSTERESIS  = 6
+        HYSTERESIS  = 4,
+        FURNACE     = 5, 
+        UNDERBELLY  = 6
     };
     uint8_t bits = 0;
 
     SignalState() = default;
-    SignalState(bool fanLo, bool fanHi, bool ac, bool heatPump, bool furnace, bool underbelly = false, bool hysteresis = false) {
+    SignalState(bool fanLo, bool fanHi, bool ac, bool heatPump, bool hysteresis=false, bool furnace=false, bool underbelly = false) {
         bits =
             (fanLo      << FAN_LO)    |
             (fanHi      << FAN_HI)    |
             (ac         << AC)        |
             (heatPump   << HEAT_PUMP) |
+            (hysteresis << HYSTERESIS)|
             (furnace    << FURNACE)   |
-            (underbelly << UNDERBELLY)|
-            (hysteresis << HYSTERESIS);
+            (underbelly << UNDERBELLY);
     }
 
     bool get(Bit b) const {
@@ -31,17 +31,16 @@ struct SignalState {
     String encode() {
         uint8_t b = bits;
 
-        // Extract 3-bit high pattern
+        // Extract 2-bit high pattern
         uint8_t highBits =
-            ((b >> SignalState::HYSTERESIS) & 1) << 2 |
             ((b >> SignalState::FURNACE)    & 1) << 1 |
             ((b >> SignalState::UNDERBELLY) & 1);
 
-        // Extract 4-bit low pattern
-        uint8_t lowBits = b & 0x0F;
+        // Extract 5-bit low pattern
+        uint8_t lowBits = b & 0x1F;
 
         char highChar = HIGH_LIST[highBits];
-        char lowChar  = LOW_LIST[lowBits];
+        char lowChar  = getLowbitCharacter(lowBits);
 
         String out;
         out += highChar;
@@ -50,36 +49,45 @@ struct SignalState {
     }
 
 
-    char HIGH_LIST[8] = {
-        'h', // 000
-        'u', // 001
-        'f', // 010
-        'b', // 011
-        'H', // 100
-        'U', // 101
-        'F', // 110
-        'B', // 111
+    char HIGH_LIST[4] = {
+        '-', // 00
+        'F', // 01
+        'U', // 10
+        'B', // 11
     };
 
-    char LOW_LIST[16] = {
-        '-', // 0000
-        'z', // 0001
-        'y', // 0010
-        'x', // 0011
-        'F', // 0100
-        'H', // 0101
-        'C', // 0110
-        'w', // 0111
-        'f', // 1000
-        'h', // 1001
-        'c', // 1010
-        'r', // 1011
-        'v', // 1100
-        'u', // 1101
-        't', // 1110
-        's', // 1111
-    };
+    char getHighBitCharacter(uint8_t bits){
+        switch (bits){
 
+            case 0b00: return '_'; // no furnace or underbelly calls
+            case 0b01: return 'F'; //Furnace Call
+            case 0b10: return 'U'; // Underbelly Call
+            case 0b11: return 'B'; // Both Furnace AND Underbelly Call
+            default:      return 'X'; // Invalid State
+        };
+    }
 
+    char getLowbitCharacter(uint8_t bits){
+        switch (bits){
+            case 0b0000: return '_'; // Everything off
+            case 0b0100: return 'F'; // Fan Hi
+            case 0b0101: return 'H'; // Heat + Fan Hi
+            case 0b0110: return 'C'; // Cool + Fan Hi
+            case 0b1000: return 'f'; // Fan Lo
+            case 0b1001: return 'h'; // Heat + Fan Lo
+            case 0b1010: return 'c'; // Cool + Fan Lo
+            
+            // High Hysteresis
+            case 0b10000: return '-'; // Everything off
+            case 0b10100: return 'F'; // Fan Hi
+            case 0b10101: return 'H'; // Heat + Fan Hi
+            case 0b10110: return 'C'; // Cool + Fan Hi
+            case 0b11000: return 'f'; // Fan Lo
+            case 0b11001: return 'h'; // Heat + Fan Lo
+            case 0b11010: return 'c'; // Cool + Fan Lo
 
+            default:      return 'X'; // Unknown or invalid State
+
+        };
+    }
 };
