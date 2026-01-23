@@ -127,7 +127,7 @@ const char* statusString(bool isHigh) {
 #ifndef CONSTANTS
   #define HEAT_PUMP_HYSTERESIS_LOWER_F 34  // Turn OFF heat pump below this
   #define HEAT_PUMP_HYSTERESIS_UPPER_F 36  // Turn ON heat pump above this
-  #define UNDERBELLY_TEMP_THRESHOLD_F 50
+  #define UNDERBELLY_TEMP_THRESHOLD_F 40
   
   // Must be > 750 ms for Dallas Temp sensors to work properly
   const int LOOP_DELAY_MS = 800; // Dallas sensors: 750ms + 50ms buffer
@@ -672,6 +672,7 @@ public:
       bool heatPumpCallActive = isHeatPumpCall;
       bool underbellyTooCold = hasFurnace && underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F;
       bool hasCallForHeat = (furnaceCallActive || heatPumpCallActive);
+      bool isFrigid = outdoorTemp < 20
   
       if (isHysteresisLowMode){
         // the temps are cold enough to use the space heaters
@@ -693,7 +694,7 @@ public:
           }
         }
         else {
-          setSSR(SSRState::SSROff);
+          
           if (hasFurnace){
             if (underbellyTooCold){
               setFurnaceRelayState(OutputState::NoPassthrough);
@@ -703,6 +704,16 @@ public:
               setFurnaceRelayState(OutputState::Passthrough);
               setFurnacePowerRelayState(PowerState::NoSupply12V);
             }
+            if (isFrigid){
+              setSSR(SSRState::SSROn);
+            }
+            else{
+              setSSR(SSRState::SSROff);
+            }
+          }
+          else
+          {
+            setSSR(SSRState::SSROff);
           }
         }
       }
