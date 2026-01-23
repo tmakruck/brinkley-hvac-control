@@ -672,7 +672,7 @@ public:
       bool heatPumpCallActive = isHeatPumpCall;
       bool underbellyTooCold = hasFurnace && underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F;
       bool hasCallForHeat = (furnaceCallActive || heatPumpCallActive);
-      bool isFrigid = outdoorTemp < 20
+      bool isFrigid = outdoorTemp < 15;
   
       if (isHysteresisLowMode){
         // the temps are cold enough to use the space heaters
