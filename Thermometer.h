@@ -14,6 +14,7 @@ public:
     Thermometer(char* name, DeviceAddress address);
 
     bool requiresHeatingMode(int thresholdF, int temperatureSwing = 1);
+    bool IsFrigid();
     int retrieveTemperature();
     void setSensor(DallasTemperature &sensors);
 };

@@ -14,9 +14,9 @@ class HVACZone {
     SignalState readSignalState();
     OutputState readOutputState();
     void updateOutputStates(OutputState newState);
-    void validateNewState(newCalculatedState);
-    void printPinStates();
-    void CalculateNewOutputState(SignalState currentSignalState);
+    OutputState validateNewState(OutputState newCalculatedState);
+    void printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState);
+    OutputState CalculateNewOutputState(SignalState currentSignalState);
 public:
     HVACZone(HVACZoneConfig config);
     void DoLoop();

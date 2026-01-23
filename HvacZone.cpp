@@ -53,12 +53,13 @@ OutputState HVACZone::readOutputState() {
     return currentOutputState;
 }
 
-void HVACZone::validateNewState(OutputState expectedNewState){
+OutputState HVACZone::validateNewState(OutputState expectedNewState){
   OutputState actualNewState = this->readOutputState();
   if (actualNewState.bits != expectedNewState.bits){
     this->fallbackToDefaultBehavior();
+    actualNewState = this->readOutputState();
   }
-  this->printPinStates();
+  return actualNewState;
 }
 
 void HVACZone::DoLoop(){
@@ -69,14 +70,19 @@ void HVACZone::DoLoop(){
         // Handle state change logic here
         OutputState newCalculatedState = this->CalculateNewOutputState(currentInputState);
         this->updateOutputStates(newCalculatedState);
-        this->validateNewState(newCalculatedState);
+        OutputState actualNewState = this->validateNewState(newCalculatedState);
+
+        this->printPinStates(currentInputState, newCalculatedState, actualNewState);
         this->previousInputState = currentInputState;
+
     }
 }
 
-void HVACZone::printPinStates() {
+void HVACZone::printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState) {
   //TODO get single-character status for each zone and print to LCD
-  
+  log_info("Current Input State   = 0x%02X", currentInputState.bits);
+  log_info("Expected Output State = 0x%02X", calculatedState.bits);
+  log_info("Actual Output State   = 0x%02X", actualState.bits); 
 }
 
 void HVACZone::updateOutputStates(OutputState newState){
@@ -107,7 +113,7 @@ void HVACZone::fallbackToDefaultBehavior(){
   this->updateOutputStates(newOutputState);
 }
 
-void HVACZone::CalculateNewOutputState(SignalState currentSignalState){
+OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState){
   bool hasFurnace = this->zoneConfig.hasFurnace;
   bool isFurnaceCall = currentSignalState.get(SignalState::Bit::FURNACE);
   bool furnaceCallActive = hasFurnace && isFurnaceCall;
@@ -119,6 +125,7 @@ void HVACZone::CalculateNewOutputState(SignalState currentSignalState){
   bool hasCallForHeat = (furnaceCallActive || heatPumpCallActive);
   bool isHysteresisLowMode = currentSignalState.get(SignalState::Bit::HYSTERESIS);
 
+  bool isFrigid = OutsideThermometer.IsFrigid();
 
   StateType newFanLoRelayState = Passthrough;
   StateType newFanHiRelayState = Passthrough;
@@ -146,10 +153,15 @@ void HVACZone::CalculateNewOutputState(SignalState currentSignalState){
       }
     }
     else {
-      newSSRState = SSROff;
+
       if (hasFurnace && underbellyTooCold){
         newFurnaceRelayState = Supply12V;
         newFurnacePowerRelayState = Supply12V;
+      }
+      if (hasFurnace && isFrigid){
+        newSSRState = SSROn;
+      } else {
+        newSSRState = SSROff;
       }
     }
   }
@@ -165,7 +177,7 @@ void HVACZone::CalculateNewOutputState(SignalState currentSignalState){
       newHeatPumpPowerRelayState = Supply12V;
       newFanHiRelayState = Supply12V;
       newHeatPumpRelayState = Supply12V;
-      newAcRelayState = Passthrough;
+      newACRelayState = Passthrough;
       
 
       if (underbellyTooCold) {
@@ -198,6 +210,7 @@ void HVACZone::CalculateNewOutputState(SignalState currentSignalState){
     }     
   }
 
-  OutputState(newFanLoRelayState, newFanHiRelayState, newACRelayState, newHeatPumpRelayState, newSSRState, 
-              newFurnaceRelayState, newFurnacePowerRelayState, newHeatPumpPowerRelayState)
+  OutputState newOutputState = OutputState(newFanLoRelayState, newFanHiRelayState, newACRelayState, newHeatPumpRelayState, newSSRState, 
+              newFurnaceRelayState, newFurnacePowerRelayState, newHeatPumpPowerRelayState);
+  return newOutputState;
 }

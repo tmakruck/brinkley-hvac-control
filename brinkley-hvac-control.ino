@@ -20,13 +20,9 @@ int outdoorTemp = 100;
 int underbellyTemp = 100;
 int thirdTemp = 100;
 unsigned long temperatureReadTimer = 0;
-unsigned long lastDailyResetTime = 0;
-unsigned long TWENTY_FOUR_HOURS_MS = 86400000UL;  // 24 hours in milliseconds
-
-
 
 #ifndef CONSTANTS
-  const int UNDERBELLY_TEMP_THRESHOLD_F = 50;
+  const int UNDERBELLY_TEMP_THRESHOLD_F = 45;
   
   // Must be > 750 ms for Dallas Temp sensors to work properly
   const int LOOP_DELAY_MS = 800; // Dallas sensors: 750ms + 50ms buffer
@@ -141,7 +137,6 @@ void setup() {
   
   delay(LOOP_DELAY_MS);
   temperatureReadTimer = millis()-20000;  // Initialize timer
-  lastDailyResetTime = millis()-20000;    // Initialize daily reset timer
 
   writeLCD(SECOND_LINE, " ");
 

@@ -48,8 +48,13 @@ int Thermometer::retrieveTemperature() {
     }
 
     return this->lastTemperature;
-  }
+}
 
-  void Thermometer::setSensor(DallasTemperature& sensors) {
-      this->sensors = &sensors;
-  }
+bool Thermometer::IsFrigid(){
+    int outdoorTemp = this->retrieveTemperature();
+    return outdoorTemp < 10;
+}
+
+void Thermometer::setSensor(DallasTemperature& sensors) {
+    this->sensors = &sensors;
+}

@@ -4,7 +4,7 @@
 // RELAY HIGH trigger Names - relays in NC position
 const StateType Passthrough = {"Passthrough", HIGH};
 const StateType NoSupply12V = {"NoSupply12V", HIGH};
-const StateType Relax_Relay = { "Relax the Relay", HIGH }
+const StateType Relax_Relay = { "Relax the Relay", HIGH };
 
 // RELAY LOW trigger names - turns relays to NO position
 const StateType BlockSignal = {"BlockSignal", LOW};
