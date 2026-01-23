@@ -8,7 +8,7 @@ class TemperatureController {
     DallasTemperature sensors;
     
 public:
-    TemperatureController(int dataPin);
+    TemperatureController(){};
     TemperatureController(int dataPin, Thermometer thermometers[]);
     void requestTemperatures();
     void discoverThermometers(); 

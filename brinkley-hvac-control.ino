@@ -13,13 +13,14 @@
 using namespace Menu;
 using namespace std;
 
-bool debugState = true;
+bool debugState = false;
 bool deepDebug = true;
 bool isHysteresisLowMode = false;
 int outdoorTemp = 100;
 int underbellyTemp = 100;
 int thirdTemp = 100;
 unsigned long temperatureReadTimer = 0;
+
 
 #ifndef CONSTANTS
   const int UNDERBELLY_TEMP_THRESHOLD_F = 45;
@@ -57,30 +58,31 @@ unsigned long temperatureReadTimer = 0;
   #pragma endregion Other
 #endif
 #define LCD true
+
   // Store each sensor's unique 64-bit address
 DeviceAddress outsideAddr    = { 0x28, 0xEC, 0x81, 0x87, 0x00, 0xE0, 0x49, 0xBC };
 DeviceAddress underbellyAddr = { 0x28, 0xA6, 0x0B, 0x87, 0x00, 0xA6, 0x0C, 0x38 };
 DeviceAddress thirdAddr      = { 0x28, 0x44, 0x71, 0x87, 0x00, 0x6B, 0x20, 0x12 };
-Thermometer OutsideThermometer    = Thermometer("Outside",    outsideAddr);
-Thermometer UnderbellyThermometer = Thermometer("Underbelly", underbellyAddr);
-Thermometer ThirdThermometer      = Thermometer("Third",      thirdAddr);
+Thermometer OutsideThermometer;
+Thermometer UnderbellyThermometer;
+Thermometer ThirdThermometer;
 
 Thermometer thermometers[] = {
     OutsideThermometer,
     UnderbellyThermometer,
     ThirdThermometer
 };
-TemperatureController tempController(Temperature_Data, thermometers);
+TemperatureController tempController;
 
 #pragma region HVAC setup
 
-HVACZoneConfig zone1Config = HVACZoneConfig("Bedroom", ZONE1_START, SSR1_HEAT, 35, FURN_SENSE, UNDERBELLY_TEMP_THRESHOLD_F);
-HVACZoneConfig zone2Config = HVACZoneConfig("Living Room", ZONE2_START, SSR2_HEAT, 35);
-HVACZoneConfig zone3Config = HVACZoneConfig("Garage", ZONE3_START, SSR3_HEAT, 39);
+HVACZoneConfig zone1Config;
+HVACZoneConfig zone2Config;
+HVACZoneConfig zone3Config;
 
-HVACZone Zone1(zone1Config);  
-HVACZone Zone2(zone2Config);  
-HVACZone Zone3(zone3Config);
+HVACZone Zone1;
+HVACZone Zone2;
+HVACZone Zone3;
 #pragma endregion
 
 void loop() {
@@ -140,4 +142,24 @@ void setup() {
 
   writeLCD(SECOND_LINE, " ");
 
+  OutsideThermometer    = Thermometer("Outside",    outsideAddr);
+  UnderbellyThermometer = Thermometer("Underbelly", underbellyAddr);
+  ThirdThermometer      = Thermometer("Third",      thirdAddr);
+
+  Thermometer thermometers[] = {
+      OutsideThermometer,
+      UnderbellyThermometer,
+      ThirdThermometer
+  };
+
+  log_debug("Setting Temp Controller");
+  tempController = TemperatureController(Temperature_Data, thermometers);
+  log_debug("Setting Zone Configs");
+  zone1Config = HVACZoneConfig("Bedroom", ZONE1_START, SSR1_HEAT, 35, FURN_SENSE, UNDERBELLY_TEMP_THRESHOLD_F);
+  zone2Config = HVACZoneConfig("Living Room", ZONE2_START, SSR2_HEAT, 35);
+  zone3Config = HVACZoneConfig("Garage", ZONE3_START, SSR3_HEAT, 39);
+
+  Zone1 = HVACZone(zone1Config);  
+  Zone2 = HVACZone(zone2Config);  
+  Zone3 = HVACZone(zone3Config);
 }

@@ -18,6 +18,7 @@ class HVACZone {
     void printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState);
     OutputState CalculateNewOutputState(SignalState currentSignalState);
 public:
+    HVACZone(){};
     HVACZone(HVACZoneConfig config);
     void DoLoop();
     void fallbackToDefaultBehavior();

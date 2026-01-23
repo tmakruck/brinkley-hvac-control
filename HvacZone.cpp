@@ -12,6 +12,7 @@ extern Thermometer UnderbellyThermometer;
 int zoneID=0;
 
 HVACZone::HVACZone(HVACZoneConfig config) : zoneConfig(config){
+    log_info("Initializing HVACZone for %s", config.roomName);
     // Initialize all Heat Pump outputs HIGH (relays de‑energized → NC pass‑through)
     this->zoneConfig.pinFanLoOut.set(Passthrough);
     this->zoneConfig.pinFanHiOut.set(Passthrough);

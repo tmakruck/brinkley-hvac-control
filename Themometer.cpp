@@ -4,8 +4,17 @@
 
 Thermometer::Thermometer(char* name, DeviceAddress address) : name(name)
 {
+    log_info("Initializing Thermometer %s", name);
     memcpy(this->address, address, sizeof(DeviceAddress));
     this->lastTemperature = 150;
+
+    // DeviceAddress* deviceAddress;
+    // memcpy(deviceAddress, address, sizeof(DeviceAddress));
+    // for (uint8_t i = 0; i < 8; i++)
+    // {
+    //     if ((*deviceAddress)[i] < 16) Serial.print("0");
+    //     Serial.print((*deviceAddress)[i], HEX);
+    // }
 }
 
 bool Thermometer::requiresHeatingMode(int setPointF, int temperatureSwing = 1) {
@@ -43,7 +52,8 @@ int Thermometer::retrieveTemperature() {
         }
         else
         {
-        log_debug("Error: Could not read temperature data");
+        log_info("Error: Could not read temperature data for %s", this->name);
+
         }
     }
 

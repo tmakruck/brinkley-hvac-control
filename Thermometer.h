@@ -11,6 +11,7 @@ class Thermometer
 public:
     char* name;
     DeviceAddress address;
+    Thermometer(){};
     Thermometer(char* name, DeviceAddress address);
 
     bool requiresHeatingMode(int thresholdF, int temperatureSwing = 1);
