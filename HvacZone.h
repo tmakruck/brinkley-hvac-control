@@ -10,7 +10,6 @@ class HVACZone {
     HVACZoneConfig zoneConfig;
     SignalState previousInputState;
     OutputState lastOutputState;
-    bool isHysteresisLowMode = false;
     SignalState readSignalState();
     OutputState readOutputState();
     void updateOutputStates(OutputState newState);

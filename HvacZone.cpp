@@ -31,9 +31,9 @@ SignalState HVACZone::readSignalState() {
         zoneConfig.pinFanHiSense.read(),
         zoneConfig.pinACSense.read(),
         zoneConfig.pinHPSense.read(),
-        OutsideThermometer.requiresHeatingMode(zoneConfig.hysteresisSetPoint_F),
+        OutsideThermometer.getHysteresisMode(zoneConfig.hysteresisSetPoint_F),
         zoneConfig.hasFurnace ? zoneConfig.pinFurnaceSense.read() : false,
-        zoneConfig.hasFurnace ? UnderbellyThermometer.requiresHeatingMode(zoneConfig.underbellyThreshold) : false
+        zoneConfig.hasFurnace ? UnderbellyThermometer.getHysteresisMode(zoneConfig.underbellyThreshold) : false
     );
 
     log_debug(currentSignalState.consoleData());
@@ -125,7 +125,7 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState){
 
   bool underbellyTooCold = currentSignalState.get(SignalState::Bit::UNDERBELLY);
   bool hasCallForHeat = (furnaceCallActive || heatPumpCallActive);
-  bool isHysteresisLowMode = currentSignalState.get(SignalState::Bit::HYSTERESIS);
+  bool isHysteresisLowMode = currentSignalState.get(SignalState::Bit::HYSTERESIS) == LOW;
 
   bool isFrigid = OutsideThermometer.IsFrigid();
 

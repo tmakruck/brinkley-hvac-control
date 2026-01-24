@@ -9,22 +9,22 @@ Thermometer::Thermometer(const char* name, DeviceAddress address) : name(name)
     this->lastTemperature = 150;
 }
 
-bool Thermometer::requiresHeatingMode(int setPointF, int temperatureSwing) {
+bool Thermometer::getHysteresisMode(int setPointF, int temperatureSwing) {
     int outdoorTemp = this->retrieveTemperature();
-    if (this->isHysteresisLowMode) {
+    if (this->hysteresisMode == LOW) {
         // Currently in spaceHeater/Furnace mode - need temp to rise above UPPER threshold to switch
         if (outdoorTemp >= setPointF+temperatureSwing) {
             log_debug("%s Temperature rising above %dF", this->name, setPointF+temperatureSwing);
-            this->isHysteresisLowMode = false;
+            this->hysteresisMode = HIGH;
         }
         } else {
         // Currently in heat pump mode - need temp to drop below LOWER threshold to switch
         if (outdoorTemp < setPointF-temperatureSwing) {
             log_debug("%s Temperature dropped below %dF", this->name, setPointF-temperatureSwing);
-            this->isHysteresisLowMode = true;
+            this->hysteresisMode = LOW;
         }
     }  
-    return this->isHysteresisLowMode;  
+    return this->hysteresisMode;  
 }
 
 int Thermometer::retrieveTemperature() {
