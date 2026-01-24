@@ -28,6 +28,29 @@ struct SignalState {
         return (bits >> b) & 1;
     }
 
+    // Get human-readable description of all bits
+    String describe() const {
+        String result = "";
+        result += get(FAN_LO)      ? "FanLo " : "";
+        result += get(FAN_HI)      ? "FanHi " : "";
+        result += get(AC)          ? "AC " : "";
+        result += get(HEAT_PUMP)   ? "HP " : "";
+        result += get(HYSTERESIS)  ? "Cold " : "";
+        result += get(FURNACE)     ? "Furn " : "";
+        result += get(UNDERBELLY)  ? "UBelly " : "";
+        if (result.length() == 0) result = "None";
+        return result;
+    }
+
+    // Get binary string representation
+    String toBinary() const {
+        String result = "0b";
+        for (int i = 6; i >= 0; i--) {
+            result += (bits & (1 << i)) ? '1' : '0';
+        }
+        return result;
+    }
+
     String encode() {
         uint8_t b = bits;
 

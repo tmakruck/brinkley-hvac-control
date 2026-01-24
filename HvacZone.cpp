@@ -81,7 +81,11 @@ void HVACZone::DoLoop(){
 
 void HVACZone::printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState) {
   //TODO get single-character status for each zone and print to LCD
-  log_info("Current Input State   = 0x%02X, %s", currentInputState.bits, currentInputState.encode());
+  log_info("Current Input State   = 0x%02X | %s | [%s] | '%s'", 
+           currentInputState.bits, 
+           currentInputState.toBinary().c_str(),
+           currentInputState.describe().c_str(),
+           currentInputState.encode().c_str());
   log_info("Expected Output State = 0x%02X", calculatedState.bits);
   log_info("Actual Output State   = 0x%02X", actualState.bits); 
 }
