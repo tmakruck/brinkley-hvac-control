@@ -15,17 +15,18 @@ Initializing HVACZone for Living Room
 Initializing HVACZone for Garage
 Requesting temperatures...
 Zone Bedroom signal state changed: 0x00 -> 0x50
-Current Input State   = 0x50 | 0b1010000 | [Outside Cold UBelly Cold ] | 'F-'
-Expected Output State = 0x90 | 0b10010000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:Alt FPwr:12V HPPwr:No12V ]
-Actual Output State   = 0x90 | 0b10010000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:Alt FPwr:12V HPPwr:No12V ]
-Zone Living Room signal state changed: 0x00 -> 0x1A
+Current Input State   = 0x50 | 0b01010000 | [[Unused- UBellyCold Furn- ][Hys+ FanLo- FanHi- AC- HP- ]] | 'U-' | "U - Underbelly
+Expected Output State = 0x80 | 0b10000000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:Off Furn:Alt FPwr:12V HPPwr:No12V ]
+Actual Output State   = 0x80 | 0b10000000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:Off Furn:Alt FPwr:12V HPPwr:No12V ]
+Zone Living Room signal state changed: 0x00 -> 0x15
 Falling back to default behavior for Living Room
-Current Input State   = 0x1A | 0b0011010 | [FanHi HP Outside Cold UBelly Hot ] | '-c'
+Current Input State   = 0x15 | 0b00010101 | [[Unused- UBellyWarm Furn- ][Hys+ FanLo- FanHi+ AC- HP+ ]] | '-Z' | "- - No Furnace
 Expected Output State = 0xF0 | 0b11110000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:P FPwr:No12VHPPwr:No12V ]
 Actual Output State   = 0x1F | 0b00011111 | [FanLo:P FanHi:P AC:P HP:P SSR:On Furn:Alt FPwr:12V HPPwr:12V ]
-Zone Garage signal state changed: 0x00 -> 0x18
+Zone Garage signal state changed: 0x00 -> 0x11
 Falling back to default behavior for Garage
-Current Input State   = 0x18 | 0b0011000 | [HP Outside Cold UBelly Hot ] | '-f'
+Current Input State   = 0x11 | 0b00010001 | [[Unused- UBellyWarm Furn- ][Hys+ FanLo- FanHi- AC- HP+ ]] | '-?' | "- - No Furnace
 Expected Output State = 0xF0 | 0b11110000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:P FPwr:No12VHPPwr:No12V ]
 Actual Output State   = 0x1F | 0b00011111 | [FanLo:P FanHi:P AC:P HP:P SSR:On Furn:Alt FPwr:12V HPPwr:12V ]
+Requesting temperatures...
 Requesting temperatures...
