@@ -1,29 +1,58 @@
-□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□Initializing Thermometer Outside
-Initializing Thermometer Underbelly
-Initializing Temperature Controller on pin 21 with 2 thermometers
-Found 3 devices on the bus
-28447187006B2012
-28EC818700E049BC
-28A60B8700A60C38
-Thermometer Address for Outside: 28EC818700E049BC
-Thermometer Address for Underbelly: 28A60B8700A60C38
-Creating Bedroom HVACZoneConfig
-Creating Living Room HVACZoneConfig
-Creating Garage HVACZoneConfig
-Initializing HVACZone for Bedroom
-Initializing HVACZone for Living Room
-Initializing HVACZone for Garage
-Requesting temperatures...
-Zone Bedroom signal state changed: 0x10 -> 0x00
+Capturing to consider which modes make sense in Low Hysteresis
+
+Zone Living Room signal state changed: 0x00 -> 0x05
+Current Input State   = 0x05 | 0b00000101 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi+ AC- HP+ ]] | '-H' | "- - No Furnace or Underbelly Call/H - Low Hystersis, Hi Fan Heat"
+Expected Output State = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'PO' | "P - Furnace Passthrough/O - SSR On, All Alternate"
+Actual Output State   = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'PO' | "P - Furnace Passthrough/O - SSR On, All Alternate"
+Zone Living Room signal state changed: 0x05 -> 0x08
+Current Input State   = 0x08 | 0b00001000 | [[Unused+ UBellyCold Furn- ][Hys- FanLo+ FanHi- AC- HP- ]] | '-f' | "- - No Furnace or Underbelly Call/f - Low Hystersis, Low Fan Only"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Zone Living Room signal state changed: 0x08 -> 0x00
 Current Input State   = 0x00 | 0b00000000 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi- AC- HP- ]] | '-_' | "- - No Furnace or Underbelly Call/_ - Low Hystersis, Nothing On"
-Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
-Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
-Zone Living Room signal state changed: 0x10 -> 0x00
-Current Input State   = 0x00 | 0b00000000 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi- AC- HP- ]] | '-_' | "- - No Furnace or Underbelly Call/_ - Low Hystersis, Nothing On"
-Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
-Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
-Zone Garage signal state changed: 0x10 -> 0x00
-Current Input State   = 0x00 | 0b00000000 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi- AC- HP- ]] | '-_' | "- - No Furnace or Underbelly Call/_ - Low Hystersis, Nothing On"
-Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
-Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
-Requesting temperatures...
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Zone Living Room signal state changed: 0x00 -> 0x08
+Current Input State   = 0x08 | 0b00001000 | [[Unused+ UBellyCold Furn- ][Hys- FanLo+ FanHi- AC- HP- ]] | '-f' | "- - No Furnace or Underbelly Call/f - Low Hystersis, Low Fan Only"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Zone Living Room signal state changed: 0x08 -> 0x04
+Current Input State   = 0x04 | 0b00000100 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi+ AC- HP- ]] | '-F' | "- - No Furnace or Underbelly Call/F - Low Hystersis, Hi Fan Only"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Zone Living Room signal state changed: 0x04 -> 0x06
+Current Input State   = 0x06 | 0b00000110 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi+ AC+ HP- ]] | '-C' | "- - No Furnace or Underbelly Call/C - Low Hystersis, Hi Fan Cool"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Zone Living Room signal state changed: 0x06 -> 0x0A
+Current Input State   = 0x0A | 0b00001010 | [[Unused+ UBellyCold Furn- ][Hys- FanLo+ FanHi- AC+ HP- ]] | '-c' | "- - No Furnace or Underbelly Call/c - Low Hystersis, Low Fan Cool"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Zone Living Room signal state changed: 0x0A -> 0x06
+Current Input State   = 0x06 | 0b00000110 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi+ AC+ HP- ]] | '-C' | "- - No Furnace or Underbelly Call/C - Low Hystersis, Hi Fan Cool"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Zone Living Room signal state changed: 0x06 -> 0x08
+Current Input State   = 0x08 | 0b00001000 | [[Unused+ UBellyCold Furn- ][Hys- FanLo+ FanHi- AC- HP- ]] | '-f' | "- - No Furnace or Underbelly Call/f - Low Hystersis, Low Fan Only"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Zone Living Room signal state changed: 0x08 -> 0x05
+Current Input State   = 0x05 | 0b00000101 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi+ AC- HP+ ]] | '-H' | "- - No Furnace or Underbelly Call/H - Low Hystersis, Hi Fan Heat"
+Expected Output State = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'PO' | "P - Furnace Passthrough/O - SSR On, All Alternate"
+Actual Output State   = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'PO' | "P - Furnace Passthrough/O - SSR On, All Alternate"
+Zone Living Room signal state changed: 0x05 -> 0x01
+Current Input State   = 0x01 | 0b00000001 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi- AC- HP+ ]] | '-?' | "- - No Furnace or Underbelly Call/? - Invalid Heat Pump Inputs"
+Expected Output State = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'PO' | "P - Furnace Passthrough/O - SSR On, All Alternate"
+Actual Output State   = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'PO' | "P - Furnace Passthrough/O - SSR On, All Alternate"
+Zone Living Room signal state changed: 0x01 -> 0x09
+Current Input State   = 0x09 | 0b00001001 | [[Unused+ UBellyCold Furn- ][Hys- FanLo+ FanHi- AC- HP+ ]] | '-h' | "- - No Furnace or Underbelly Call/h - Low Hystersis, Low Fan Heat"
+Expected Output State = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'PO' | "P - Furnace Passthrough/O - SSR On, All Alternate"
+Actual Output State   = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'PO' | "P - Furnace Passthrough/O - SSR On, All Alternate"
+Zone Living Room signal state changed: 0x09 -> 0x05
+Current Input State   = 0x05 | 0b00000101 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi+ AC- HP+ ]] | '-H' | "- - No Furnace or Underbelly Call/H - Low Hystersis, Hi Fan Heat"
+Expected Output State = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'PO' | "P - Furnace Passthrough/O - SSR On, All Alternate"
+Actual Output State   = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'PO' | "P - Furnace Passthrough/O - SSR On, All Alternate"
+Zone Living Room signal state changed: 0x05 -> 0x08
+Current Input State   = 0x08 | 0b00001000 | [[Unused+ UBellyCold Furn- ][Hys- FanLo+ FanHi- AC- HP- ]] | '-f' | "- - No Furnace or Underbelly Call/f - Low Hystersis, Low Fan Only"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - SSR Off, All Alternate"
