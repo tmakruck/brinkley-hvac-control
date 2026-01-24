@@ -62,7 +62,7 @@ DeviceAddress underbellyAddr = { 0x28, 0xA6, 0x0B, 0x87, 0x00, 0xA6, 0x0C, 0x38 
 // DeviceAddress thirdAddr      = { 0x28, 0x44, 0x71, 0x87, 0x00, 0x6B, 0x20, 0x12 };
 Thermometer OutsideThermometer;
 Thermometer UnderbellyThermometer;
-TemperatureController tempController;
+TemperatureController* tempController = nullptr;
 
 #pragma region HVAC setup
 
@@ -83,7 +83,7 @@ void loop() {
     log_info("Requesting temperatures...");
     
     // Request temperatures FIRST, then read after conversion
-    tempController.requestTemperatures();
+    tempController->requestTemperatures();
     delay(LOOP_DELAY_MS);  // Wait for conversion to complete (~750ms)
     
     int outdoorTemp     = OutsideThermometer.retrieveTemperature();
@@ -141,7 +141,7 @@ void setup() {
   };
 
   log_debug("Setting Temp Controller");
-  tempController = TemperatureController(Temperature_Data, thermometers);
+  tempController = new TemperatureController(Temperature_Data, thermometers);
   log_debug("Setting Zone Configs");
   zone1Config = HVACZoneConfig("Bedroom", ZONE1_START, SSR1_HEAT, 35, FURN_SENSE, UNDERBELLY_TEMP_THRESHOLD_F);
   zone2Config = HVACZoneConfig("Living Room", ZONE2_START, SSR2_HEAT, 35);
