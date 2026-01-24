@@ -32,7 +32,7 @@ struct SignalState {
             (heatPump   << HEAT_PUMP);
     }
 
-    bool get(Bit b) const {
+    int get(Bit b) const {
         return (bits >> b) & 1;
     }
 
@@ -128,10 +128,10 @@ struct SignalState {
             case 0b001: return 'F';
             case 0b010: return 'U';
             case 0b011: return 'B';
-            case 0b100: return '/'; // unused only
-            case 0b101: return '/'; // unused + furnace
-            case 0b110: return '/'; // unused + underbelly
-            case 0b111: return '/'; // all three
+            case 0b100: return '/'; 
+            case 0b101: return '/';
+            case 0b110: return '/';
+            case 0b111: return '/';
             default:    return '?';
         }
     }

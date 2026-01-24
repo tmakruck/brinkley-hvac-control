@@ -23,6 +23,6 @@ void log_debug(const char* fmt, ...){
   Serial.println(buffer);
 }
 
-const char* statusString(bool isHigh) {
-  return isHigh ? "High" : "Low";
+const char* statusString(int value) {
+  return value==HIGH ? "High" : "Low";
 }
