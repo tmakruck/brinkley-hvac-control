@@ -36,7 +36,6 @@ SignalState HVACZone::readSignalState() {
         zoneConfig.hasFurnace ? UnderbellyThermometer.requiresHeatingMode(zoneConfig.underbellyThreshold) : false
     );
 
-    currentSignalState.consoleLine();
     log_debug(currentSignalState.consoleData());
     return currentSignalState;
 }

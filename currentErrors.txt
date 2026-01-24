@@ -1,4 +1,4 @@
-□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□Initializing Thermometer Outside
+□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□Initializing Thermometer Outside
 Initializing Thermometer Underbelly
 Initializing Temperature Controller on pin 21 with 2 thermometers
 Found 3 devices on the bus
@@ -15,25 +15,17 @@ Initializing HVACZone for Living Room
 Initializing HVACZone for Garage
 Requesting temperatures...
 Zone Bedroom signal state changed: 0x00 -> 0x50
-Current Input State   = 0x50 | 0b1010000 | [Cold UBelly ] | 'F-'
-Expected Output State = 0x90
-Actual Output State   = 0x90
-
+Current Input State   = 0x50 | 0b1010000 | [Outside Cold UBelly Cold ] | 'F-'
+Expected Output State = 0x90 | 0b10010000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:Alt FPwr:12V HPPwr:No12V ]
+Actual Output State   = 0x90 | 0b10010000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:Alt FPwr:12V HPPwr:No12V ]
 Zone Living Room signal state changed: 0x00 -> 0x1A
 Falling back to default behavior for Living Room
-Current Input State   = 0x1A | 0b0011010 | [FanHi HP Cold ] | '-c'
-Expected Output State = 0xF0
-Actual Output State   = 0x1F
+Current Input State   = 0x1A | 0b0011010 | [FanHi HP Outside Cold UBelly Hot ] | '-c'
+Expected Output State = 0xF0 | 0b11110000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:P FPwr:No12VHPPwr:No12V ]
+Actual Output State   = 0x1F | 0b00011111 | [FanLo:P FanHi:P AC:P HP:P SSR:On Furn:Alt FPwr:12V HPPwr:12V ]
 Zone Garage signal state changed: 0x00 -> 0x18
 Falling back to default behavior for Garage
-Current Input State   = 0x18 | 0b0011000 | [HP Cold ] | '-f'
-Expected Output State = 0xF0
-Actual Output State   = 0x1F
-Requesting temperatures...
-Requesting temperatures...
-Requesting temperatures...
-Requesting temperatures...
-Requesting temperatures...
-Requesting temperatures...
-Requesting temperatures...
+Current Input State   = 0x18 | 0b0011000 | [HP Outside Cold UBelly Hot ] | '-f'
+Expected Output State = 0xF0 | 0b11110000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:P FPwr:No12VHPPwr:No12V ]
+Actual Output State   = 0x1F | 0b00011111 | [FanLo:P FanHi:P AC:P HP:P SSR:On Furn:Alt FPwr:12V HPPwr:12V ]
 Requesting temperatures...
