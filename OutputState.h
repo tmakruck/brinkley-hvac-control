@@ -166,7 +166,7 @@ struct OutputState {
             case 0b01100: return 'l';
             case 0b01101: return 'm';
             case 0b01110: return 'n';
-            case 0b01111: return 'o';
+            case 0b01111: return 'o'; // Everything else is alt state
 
             // SSR On
             case 0b10000: return 'S'; // Everything else is passthrough
@@ -184,7 +184,7 @@ struct OutputState {
             case 0b11100: return 'L';
             case 0b11101: return 'M';
             case 0b11110: return 'N';
-            case 0b11111: return 'O';
+            case 0b11111: return 'O'; // Everything else is alt state
             default: return '?';
         }
     }
@@ -217,6 +217,8 @@ struct OutputState {
             // Low Hystersis mode
             case '_': result += "SSR Off, All Passthrough"; break;
             case 'S': result += "SSR On, All Passthrough"; break;
+            case 'o': result += "SSR Off, All Alternate"; break;
+            case 'O': result += "SSR On, All Alternate"; break;
 
             default: result += "Unknown Output State";
         }

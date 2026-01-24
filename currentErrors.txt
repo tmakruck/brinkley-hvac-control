@@ -14,10 +14,16 @@ Initializing HVACZone for Bedroom
 Initializing HVACZone for Living Room
 Initializing HVACZone for Garage
 Requesting temperatures...
-Zone Living Room signal state changed: 0x00 -> 0x05
-Current Input State   = 0x05 | 0b00000101 | [[Unused- UBellyWarm Furn- ][Hys- FanLo- FanHi+ AC- HP+ ]] | '-H' | "- - No Furnace or Underbelly Call/H - Low Hystersis, Hi Fan Heat"
-Expected Output State = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'P?' | "P - Invalid Case/? - Invalid Heat Pump Inputs"
-Actual Output State   = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'P?' | "P - Invalid Case/? - Invalid Heat Pump Inputs"
-Requesting temperatures...
-Requesting temperatures...
+Zone Bedroom signal state changed: 0x10 -> 0x00
+Current Input State   = 0x00 | 0b00000000 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi- AC- HP- ]] | '-_' | "- - No Furnace or Underbelly Call/_ - Low Hystersis, Nothing On"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
+Zone Living Room signal state changed: 0x10 -> 0x00
+Current Input State   = 0x00 | 0b00000000 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi- AC- HP- ]] | '-_' | "- - No Furnace or Underbelly Call/_ - Low Hystersis, Nothing On"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
+Zone Garage signal state changed: 0x10 -> 0x00
+Current Input State   = 0x00 | 0b00000000 | [[Unused+ UBellyCold Furn- ][Hys- FanLo- FanHi- AC- HP- ]] | '-_' | "- - No Furnace or Underbelly Call/_ - Low Hystersis, Nothing On"
+Expected Output State = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
+Actual Output State   = 0x0F | 0b00001111 | [[HPPwr- FPwr-Furn:P ][SSR:Off FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'Po' | "P - Furnace Passthrough/o - Unknown Output State"
 Requesting temperatures...

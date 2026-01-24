@@ -80,7 +80,7 @@ void loop() {
   unsigned long timeDiff = currentTime - temperatureReadTimer;
   // Check if 10 seconds (10000 ms) have passed since last read
   if (timeDiff >= TEMPERATURE_READ_INTERVAL_MS) {
-    log_info("Requesting temperatures...");
+    //log_debug("Requesting temperatures...");
     
     // Request temperatures FIRST, then read after conversion
     tempController->requestTemperatures();
