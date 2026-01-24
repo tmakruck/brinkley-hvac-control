@@ -19,10 +19,10 @@ Outdoor Temp: -197, Underbelly: -197
 Falling back to default behavior for Bedroom
 Falling back to default behavior for Living Room
 Falling back to default behavior for Garage
-Zone Bedroom signal state changed: 0x00 -> 0x70
-Current Input State   = 0x70
-Expected Output State = 0xF0
-Actual Output State   = 0xF0
+Zone Bedroom signal state changed: 0x00 -> 0x50
+Current Input State   = 0x50
+Expected Output State = 0x90
+Actual Output State   = 0x90
 Zone Living Room signal state changed: 0x00 -> 0x1A
 Falling back to default behavior for Living Room
 Current Input State   = 0x1A
@@ -33,3 +33,21 @@ Falling back to default behavior for Garage
 Current Input State   = 0x18
 Expected Output State = 0xF0
 Actual Output State   = 0x1F
+Requesting temperatures...
+Invalid temperature readings detected, skipping adjustments
+Outdoor Temp: -197, Underbelly: -197
+Falling back to default behavior for Bedroom
+Falling back to default behavior for Living Room
+Falling back to default behavior for Garage
+Requesting temperatures...
+Invalid temperature readings detected, skipping adjustments
+Outdoor Temp: -197, Underbelly: -197
+Falling back to default behavior for Bedroom
+Falling back to default behavior for Living Room
+Falling back to default behavior for Garage
+Requesting temperatures...
+Invalid temperature readings detected, skipping adjustments
+Outdoor Temp: -197, Underbelly: -197
+Falling back to default behavior for Bedroom
+Falling back to default behavior for Living Room
+Falling back to default behavior for Garage

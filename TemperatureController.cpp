@@ -29,9 +29,11 @@ void TemperatureController::discoverThermometers() {
 void TemperatureController::printAddress(Thermometer t) {
     DeviceAddress deviceAddress;
     memcpy(deviceAddress, t.address, sizeof(DeviceAddress));
+    Serial.print("Thermometer Address for %s: ", t.name)
     for (uint8_t i = 0; i < 8; i++)
     {
         if ((deviceAddress)[i] < 16) Serial.print("0");
         Serial.print((deviceAddress)[i], HEX);
     }
+    Serial.println();
 }
