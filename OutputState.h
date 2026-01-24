@@ -54,16 +54,16 @@ struct OutputState {
 
         result += "[";
         // Group A (left)
-        result += get(HEAT_PUMP_POWER)==StateType::NoSupply12V ? "HPPwr- " : "HPPwr+ ";
-        result += get(FURNACE_POWER)==StateType::NoSupply12V   ? "FPwr-"   : "FPwr+ ";
-        result += get(FURNACE)==StateType::Passthrough         ? "Furn:P " : "Furn:Alt ";
+        result += (get(HEAT_PUMP_POWER)==NoSupply12V.Value ? "HPPwr- " : "HPPwr+ ");
+        result += (get(FURNACE_POWER)==NoSupply12V.Value   ? "FPwr-"   : "FPwr+ ");
+        result += (get(FURNACE)==Passthrough.Value         ? "Furn:P " : "Furn:Alt ");
          result += "][";
         // Group B (right)
-        result += get(SSR)==StateType::SSROn                   ? "SSR:On " : "SSR:Off ";  // SSR is direct logic
-        result += get(FAN_LO)==StateType::Passthrough          ? "FanLo:P " : "FanLo:Alt ";
-        result += get(FAN_HI)==StateType::Passthrough          ? "FanHi:P " : "FanHi:Alt/12V ";
-        result += get(AC)==StateType::Passthrough              ? "AC:P " : "AC:Alt ";
-        result += get(HEAT_PUMP)==StateType::Passthrough       ? "HP:P " : "HP:Alt/12V ";
+        result += (get(SSR)==SSROn.Value                   ? "SSR:On " : "SSR:Off ");  // SSR is direct logic
+        result += (get(FAN_LO)==Passthrough.Value          ? "FanLo:P " : "FanLo:Alt ");
+        result += (get(FAN_HI)==Passthrough.Value          ? "FanHi:P " : "FanHi:Alt/12V ");
+        result += (get(AC)==Passthrough.Value              ? "AC:P " : "AC:Alt ");
+        result += (get(HEAT_PUMP)==Passthrough.Value       ? "HP:P " : "HP:Alt/12V ");
         result += "]";
         return result;
     }

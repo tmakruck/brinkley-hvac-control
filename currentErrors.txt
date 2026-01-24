@@ -1,4 +1,4 @@
-□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□Initializing Thermometer Outside
+□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□Initializing Thermometer Outside
 Initializing Thermometer Underbelly
 Initializing Temperature Controller on pin 21 with 2 thermometers
 Found 3 devices on the bus
@@ -15,12 +15,9 @@ Initializing HVACZone for Living Room
 Initializing HVACZone for Garage
 Requesting temperatures...
 Zone Living Room signal state changed: 0x00 -> 0x05
-Falling back to default behavior for Living Room
 Current Input State   = 0x05 | 0b00000101 | [[Unused- UBellyWarm Furn- ][Hys- FanLo- FanHi+ AC- HP+ ]] | '-H' | "- - No Furnace or Underbelly Call/H - Low Hystersis, Hi Fan Heat"
-Expected Output State = 0xF0 | 0b11110000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:P FPwr:No12VHPPwr:No12V ]
-Actual Output State   = 0x1F | 0b00011111 | [FanLo:P FanHi:P AC:P HP:P SSR:On Furn:Alt FPwr:12V HPPwr:12V ]
-Zone Garage signal state changed: 0x00 -> 0x01
-Falling back to default behavior for Garage
-Current Input State   = 0x01 | 0b00000001 | [[Unused- UBellyWarm Furn- ][Hys- FanLo- FanHi- AC- HP+ ]] | '-?' | "- - No Furnace or Underbelly Call/? - Invalid Heat Pump Inputs"
-Expected Output State = 0xF0 | 0b11110000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:P FPwr:No12VHPPwr:No12V ]
-Actual Output State   = 0x1F | 0b00011111 | [FanLo:P FanHi:P AC:P HP:P SSR:On Furn:Alt FPwr:12V HPPwr:12V ]
+Expected Output State = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'P?' | "P - Invalid Case/? - Invalid Heat Pump Inputs"
+Actual Output State   = 0x1F | 0b00011111 | [[HPPwr- FPwr-Furn:P ][SSR:On FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V ]] | 'P?' | "P - Invalid Case/? - Invalid Heat Pump Inputs"
+Requesting temperatures...
+Requesting temperatures...
+Requesting temperatures...

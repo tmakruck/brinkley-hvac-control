@@ -9,7 +9,7 @@ public:
     Pin();
     Pin(int pinNumber, const char* pinName, int pinType, bool inverted = false);
 
-    bool read();
-    bool set(StateType state);
-    bool set(bool isHigh);
+    int read();
+    int set(StateType newState);
+    int set(int newValue);
 };

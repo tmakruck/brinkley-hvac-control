@@ -19,14 +19,14 @@ int Pin::read() {
     return pinValue;
 }
 
-int Pin::set(StateType state) {
-    log_debug("Setting %s (%d) to %s (%d)", this->pinName, this->pinNumber, state.Name, state.Value);
-    digitalWrite(this->pinNumber, state.Value);
+int Pin::set(StateType newState) {
+    log_debug("Setting %s (%d) to %s (%d)", this->pinName, this->pinNumber, newState.Name, newState.Value);
+    digitalWrite(this->pinNumber, newState.Value);
     return this->read();
 }
 
-int Pin::set(int stateValue) {
-    log_debug("Setting %s (%d) to %s", this->pinName, this->pinNumber, statusString(stateValue));
-    digitalWrite(this->pinNumber, stateValue ? HIGH : LOW);
+int Pin::set(int newValue) {
+    log_debug("Setting %s (%d) to %s", this->pinName, this->pinNumber, statusString(newValue));
+    digitalWrite(this->pinNumber, newValue);
     return this->read();
 }
