@@ -12,7 +12,7 @@ public:
     TemperatureController(){};
     
     template<size_t N>
-    TemperatureController(int dataPin, Thermometer (&thermometers)[N]) 
+    TemperatureController(int dataPin, Thermometer* (&thermometers)[N]) 
         : dataPin(dataPin), oneWire(dataPin), sensors(&oneWire) {
         log_info("Initializing Temperature Controller on pin %d with %d thermometers", dataPin, N);
         this->sensors.begin();
@@ -20,8 +20,8 @@ public:
         this->discoverThermometers();
 
         for (size_t i = 0; i < N; i++) {
-            thermometers[i].setSensor(sensors);
-            this->printAddress(thermometers[i]);
+            thermometers[i]->setSensor(sensors);
+            this->printAddress(*thermometers[i]);
         }
 
         this->sensors.requestTemperatures();

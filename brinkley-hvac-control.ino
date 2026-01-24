@@ -89,6 +89,7 @@ void loop() {
 
     if (outdoorTemp < INVALID_TEMP_THRESHOLD or underbellyTemp < INVALID_TEMP_THRESHOLD) {
       log_info("Invalid temperature readings detected, skipping adjustments");
+      log_info("Outdoor Temp: %d, Underbelly: %d", outdoorTemp, underbellyTemp);
       Zone1.fallbackToDefaultBehavior();
       Zone2.fallbackToDefaultBehavior();
       Zone3.fallbackToDefaultBehavior();
@@ -135,9 +136,9 @@ void setup() {
   OutsideThermometer    = Thermometer("Outside",    outsideAddr);
   UnderbellyThermometer = Thermometer("Underbelly", underbellyAddr);
 
-  Thermometer thermometers[] = {
-      OutsideThermometer,
-      UnderbellyThermometer,
+  Thermometer* thermometers[] = {
+      &OutsideThermometer,
+      &UnderbellyThermometer,
   };
 
   log_debug("Setting Temp Controller");
