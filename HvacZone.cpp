@@ -22,7 +22,7 @@ HVACZone::HVACZone(HVACZoneConfig config) : zoneConfig(config){
 
     this->zoneConfig.pinSSR.set(SSROff);
 
-    this->previousInputState = SignalState(false, false, false, false, false, false, false);
+    this->previousInputState = SignalState();
 }
 
 SignalState HVACZone::readSignalState() {

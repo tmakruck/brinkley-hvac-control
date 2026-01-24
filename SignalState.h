@@ -1,4 +1,5 @@
 #pragma once
+#include <Arduino.h>
 struct SignalState {
 
     // Bit positions (MSB → LSB)
@@ -15,11 +16,8 @@ struct SignalState {
 
     uint8_t bits = 0;
 
-    SignalState() = default;
-
-    SignalState(bool fanLo, bool fanHi, bool ac, bool heatPump,
-                bool hysteresis=false, bool furnace=false,
-                bool underbelly=false, bool unused=false)
+    SignalState(int fanLo=LOW, int fanHi=LOW, int ac=LOW, int heatPump=LOW, int hysteresis=HIGH, 
+        int furnace=0, int underbelly=0, int unused=0)
     {
         bits =
             (unused     << UNUSED)     |
@@ -42,16 +40,16 @@ struct SignalState {
 
         result += "[";
         // Group A (left)
-        result += get(UNUSED)     ? "Unused+ "     : "Unused- ";
-        result += get(UNDERBELLY) ? "UBellyCold "  : "UBellyWarm ";
-        result += get(FURNACE)    ? "Furn+ "       : "Furn- ";
+        result += get(UNUSED)==LOW      ? "Unused+ "     : "Unused- ";
+        result += get(UNDERBELLY)==LOW  ? "UBellyCold "  : "UBellyWarm ";
+        result += get(FURNACE)==HIGH    ? "Furn+ "       : "Furn- ";
         result += "][";
         // Group B (right)
-        result += get(HYSTERESIS) ? "Hys+ "        : "Hys- ";
-        result += get(FAN_LO)     ? "FanLo+ "      : "FanLo- ";
-        result += get(FAN_HI)     ? "FanHi+ "      : "FanHi- ";
-        result += get(AC)         ? "AC+ "         : "AC- ";
-        result += get(HEAT_PUMP)  ? "HP+ "         : "HP- ";
+        result += get(HYSTERESIS)==HIGH ? "Hys+ "        : "Hys- ";
+        result += get(FAN_LO)==HIGH     ? "FanLo+ "      : "FanLo- ";
+        result += get(FAN_HI)==HIGH     ? "FanHi+ "      : "FanHi- ";
+        result += get(AC)==HIGH         ? "AC+ "         : "AC- ";
+        result += get(HEAT_PUMP)==HIGH  ? "HP+ "         : "HP- ";
         result += "]";
         return result;
     }

@@ -16,10 +16,8 @@ struct OutputState {
 
     uint8_t bits = 0;
 
-    OutputState() = default;
-
-    OutputState(bool fanLo, bool fanHi, bool ac, bool heatPump, bool spaceHeater = false, 
-        bool furnace=false, bool furnacePower = false, bool heatPumpPower = false) {
+    OutputState(int fanLo=Passthrough.Value, int fanHi=Passthrough.Value, int ac=Passthrough.Value, int heatPump=Passthrough.Value, int spaceHeater=SSROff.Value, 
+        int furnace=0, int furnacePower=NoSupply12V.Value, int heatPumpPower=NoSupply12V.Value) {
         bits =
             (heatPumpPower << HEAT_PUMP_POWER) |
             (furnacePower  << FURNACE_POWER)|
@@ -137,13 +135,14 @@ struct OutputState {
     char getHighBitCharacter(uint8_t bits) {
         switch (bits) {
             case 0b000: return 'P'; // Furnace Passthrough
-            case 0b001: return 'F'; // Fur
-            case 0b010: return 'U';
-            case 0b011: return 'B';
-            case 0b100: return '/';
-            case 0b101: return '/';
-            case 0b110: return '/';
-            case 0b111: return '/';
+            case 0b001: return 'F'; // Furnace Bypass
+            case 0b011: return 'M'; // Manually Run Furnace (Force On) like for Underbelly
+            case 0b100: return 'H'; // Heat Pump Power Alternate, expected only if LowBit is also alternate
+            case 0b111: return 'B'; // Heat Pump Power Alternate and Furnace Power Alternate (Probably High Hystersis but cold underbelly)
+            
+            //case 0b101: return 'N'; // Heat pump power alternate and no furnace - likely invalid
+            //case 0b110: return '/'; // Invalid Combination - Heat Pump Power Alternate and Furnace Power but no Alternate
+            //case 0b010: return 'A'; // Furnace Power Alternate - this alone doesn't make sense
             default:    return '?';
         }
     }
@@ -151,24 +150,41 @@ struct OutputState {
     // 5-bit low table (32 entries)
     char getLowBitCharacter(uint8_t bits) {
         switch (bits) {
-            // Low Hystersis mode
-            case 0b00000: return '_';
-            case 0b01000: return 'f';
-            case 0b00100: return 'F';
-            case 0b01010: return 'c';
-            case 0b00110: return 'C';
-            case 0b01001: return 'h';
-            case 0b00101: return 'H';
+            // SSR Off
+            case 0b00000: return '_'; // Everything else is passthrough
+            case 0b00001: return 'a';
+            case 0b00010: return 'b';
+            case 0b00011: return 'c';
+            case 0b00100: return 'd';
+            case 0b00101: return 'e';
+            case 0b00110: return 'f';
+            case 0b00111: return 'g';
+            case 0b01000: return 'h';
+            case 0b01001: return 'i';
+            case 0b01010: return 'j';
+            case 0b01011: return 'k';
+            case 0b01100: return 'l';
+            case 0b01101: return 'm';
+            case 0b01110: return 'n';
+            case 0b01111: return 'o';
 
-            // High hysteresis versions
-            case 0b10000: return '-';
-            case 0b11000: return 'x';
-            case 0b10100: return 'X';
-            case 0b11010: return 'y';
-            case 0b10110: return 'Y';
-            case 0b11001: return 'z';
-            case 0b10101: return 'Z';
-
+            // SSR On
+            case 0b10000: return 'S'; // Everything else is passthrough
+            case 0b10001: return 'A';
+            case 0b10010: return 'B';
+            case 0b10011: return 'C';
+            case 0b10100: return 'D';
+            case 0b10101: return 'E';
+            case 0b10110: return 'F';
+            case 0b10111: return 'G';
+            case 0b11000: return 'H';
+            case 0b11001: return 'I';
+            case 0b11010: return 'J';
+            case 0b11011: return 'K';
+            case 0b11100: return 'L';
+            case 0b11101: return 'M';
+            case 0b11110: return 'N';
+            case 0b11111: return 'O';
             default: return '?';
         }
     }
@@ -179,11 +195,11 @@ struct OutputState {
         result += highBitChar;
         result += " - ";
         switch (highBitChar) {
-            // Low Hystersis mode
-            case '-': result += "No Furnace or Underbelly Call"; break;
-            case 'F': result += "Furnace Call"; break;
-            case 'U': result += "Underbelly Call"; break;
-            case 'B': result += "Both are Calling"; break;
+            case 'P': result += "Furnace Passthrough"; break;
+            case 'F': result += "Furnace Bypass"; break;
+            case 'M': result += "Force Furnace"; break;
+            case 'H': result += "Force Heat Pump"; break;
+            case 'B': result += "Force Both"; break;
 
             default: result += "Invalid Case";
         }
@@ -199,24 +215,10 @@ struct OutputState {
         result += " - ";
         switch (lowBitChar) {
             // Low Hystersis mode
-            case '_': result += "Low Hystersis, Nothing On"; break;
-            case 'f': result += "Low Hystersis, Low Fan Only"; break;
-            case 'F': result += "Low Hystersis, Hi Fan Only"; break;
-            case 'c': result += "Low Hystersis, Low Fan Cool"; break;
-            case 'C': result += "Low Hystersis, Hi Fan Cool"; break;
-            case 'h': result += "Low Hystersis, Low Fan Heat"; break;
-            case 'H': result += "Low Hystersis, Hi Fan Heat"; break;
+            case '_': result += "SSR Off, All Passthrough"; break;
+            case 'S': result += "SSR On, All Passthrough"; break;
 
-            // High hysteresis versions
-            case '-': result += "High Hystersis, Nothing On"; break;
-            case 'x': result += "High Hystersis, Low Fan Only"; break;
-            case 'X': result += "High Hystersis, Hi Fan Only"; break;
-            case 'y': result += "High Hystersis, Low Fan Cool"; break;
-            case 'Y': result += "High Hystersis, Hi Fan Cool"; break;
-            case 'z': result += "High Hystersis, Low Fan Heat"; break;
-            case 'Z': result += "High Hystersis, Hi Fan Heat"; break;
-
-            default: result += "Invalid Heat Pump Inputs";
+            default: result += "Unknown Output State";
         }
 
         return result;
