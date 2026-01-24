@@ -81,11 +81,13 @@ void loop() {
   // Check if 10 seconds (10000 ms) have passed since last read
   if (timeDiff >= TEMPERATURE_READ_INTERVAL_MS) {
     log_info("Requesting temperatures...");
+    
+    // Request temperatures FIRST, then read after conversion
+    tempController.requestTemperatures();
+    delay(LOOP_DELAY_MS);  // Wait for conversion to complete (~750ms)
+    
     int outdoorTemp     = OutsideThermometer.retrieveTemperature();
     int underbellyTemp  = UnderbellyThermometer.retrieveTemperature();
-
-
-    
 
     if (outdoorTemp < INVALID_TEMP_THRESHOLD or underbellyTemp < INVALID_TEMP_THRESHOLD) {
       log_info("Invalid temperature readings detected, skipping adjustments");
@@ -94,11 +96,8 @@ void loop() {
       Zone2.fallbackToDefaultBehavior();
       Zone3.fallbackToDefaultBehavior();
     }
-            
 
-    
     writeLCD(FIRST_LINE, "O:%d U:%d", outdoorTemp, underbellyTemp);
-    tempController.requestTemperatures();
     temperatureReadTimer = currentTime;  // Reset the timer
   }
 
