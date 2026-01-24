@@ -1,0 +1,35 @@
+□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□Initializing Thermometer Outside
+Initializing Thermometer Underbelly
+Initializing Temperature Controller on pin 21 with 2 thermometers
+Found 3 devices on the bus
+28447187006B2012
+28EC818700E049BC
+28A60B8700A60C38
+28EC818700E049BC28A60B8700A60C38Creating Bedroom HVACZoneConfig
+Creating Living Room HVACZoneConfig
+Creating Garage HVACZoneConfig
+Initializing HVACZone for Bedroom
+Initializing HVACZone for Living Room
+Initializing HVACZone for Garage
+Requesting temperatures...
+Error: Could not read temperature data for Outside
+Error: Could not read temperature data for Underbelly
+Invalid temperature readings detected, skipping adjustments
+Outdoor Temp: -197, Underbelly: -197
+Falling back to default behavior for Bedroom
+Falling back to default behavior for Living Room
+Falling back to default behavior for Garage
+Zone Bedroom signal state changed: 0x00 -> 0x70
+Current Input State   = 0x70
+Expected Output State = 0xF0
+Actual Output State   = 0xF0
+Zone Living Room signal state changed: 0x00 -> 0x1A
+Falling back to default behavior for Living Room
+Current Input State   = 0x1A
+Expected Output State = 0xF0
+Actual Output State   = 0x1F
+Zone Garage signal state changed: 0x00 -> 0x18
+Falling back to default behavior for Garage
+Current Input State   = 0x18
+Expected Output State = 0xF0
+Actual Output State   = 0x1F
