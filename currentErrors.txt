@@ -1,4 +1,4 @@
-□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□Initializing Thermometer Outside
+□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□Initializing Thermometer Outside
 Initializing Thermometer Underbelly
 Initializing Temperature Controller on pin 21 with 2 thermometers
 Found 3 devices on the bus
@@ -14,17 +14,13 @@ Initializing HVACZone for Bedroom
 Initializing HVACZone for Living Room
 Initializing HVACZone for Garage
 Requesting temperatures...
-Zone Bedroom signal state changed: 0x00 -> 0x50
-Current Input State   = 0x50 | 0b01010000 | [[Unused- UBellyCold Furn- ][Hys+ FanLo- FanHi- AC- HP- ]] | 'U-' | "U - Underbelly Call/- - High Hystersis, Nothing On"
-Expected Output State = 0x80 | 0b10000000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:Off Furn:Alt FPwr:12V HPPwr:No12V ]
-Actual Output State   = 0x80 | 0b10000000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:Off Furn:Alt FPwr:12V HPPwr:No12V ]
-Zone Living Room signal state changed: 0x00 -> 0x15
+Zone Living Room signal state changed: 0x00 -> 0x05
 Falling back to default behavior for Living Room
-Current Input State   = 0x15 | 0b00010101 | [[Unused- UBellyWarm Furn- ][Hys+ FanLo- FanHi+ AC- HP+ ]] | '-Z' | "- - No Furnace or Underbelly Call/Z - High Hystersis, Hi Fan Heat"
+Current Input State   = 0x05 | 0b00000101 | [[Unused- UBellyWarm Furn- ][Hys- FanLo- FanHi+ AC- HP+ ]] | '-H' | "- - No Furnace or Underbelly Call/H - Low Hystersis, Hi Fan Heat"
 Expected Output State = 0xF0 | 0b11110000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:P FPwr:No12VHPPwr:No12V ]
 Actual Output State   = 0x1F | 0b00011111 | [FanLo:P FanHi:P AC:P HP:P SSR:On Furn:Alt FPwr:12V HPPwr:12V ]
-Zone Garage signal state changed: 0x00 -> 0x11
+Zone Garage signal state changed: 0x00 -> 0x01
 Falling back to default behavior for Garage
-Current Input State   = 0x11 | 0b00010001 | [[Unused- UBellyWarm Furn- ][Hys+ FanLo- FanHi- AC- HP+ ]] | '-?' | "- - No Furnace or Underbelly Call/? - Invalid Heat Pump Inputs"
+Current Input State   = 0x01 | 0b00000001 | [[Unused- UBellyWarm Furn- ][Hys- FanLo- FanHi- AC- HP+ ]] | '-?' | "- - No Furnace or Underbelly Call/? - Invalid Heat Pump Inputs"
 Expected Output State = 0xF0 | 0b11110000 | [FanLo:Alt FanHi:Alt/12V AC:Alt HP:Alt/12V SSR:On Furn:P FPwr:No12VHPPwr:No12V ]
 Actual Output State   = 0x1F | 0b00011111 | [FanLo:P FanHi:P AC:P HP:P SSR:On Furn:Alt FPwr:12V HPPwr:12V ]
