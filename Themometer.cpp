@@ -34,6 +34,7 @@ int Thermometer::retrieveTemperature() {
     // We use the function ByIndex, and as an example get the temperature from the first sensor only.
     if (this->sensors == nullptr) {
         log_info("Error: Sensor not initialized for %s", this->name);
+        this->printAddress();
         return this->lastTemperature;  // Return cached value
     }
     
@@ -45,12 +46,12 @@ int Thermometer::retrieveTemperature() {
         // Check if reading was successful
         if (temperature != DEVICE_DISCONNECTED_F)
         {
-        log_debug("Temperature for %s is %d", this->name, tempInt);
+            log_debug("Temperature for %s is %d", this->name, tempInt);
         }
         else
         {
-        log_info("Error: Could not read temperature data for %s", this->name);
-
+            log_info("Error: Could not read temperature data for %s", this->name);
+            this->printAddress();
         }
     }
 
@@ -64,4 +65,15 @@ bool Thermometer::IsFrigid(){
 
 void Thermometer::setSensor(DallasTemperature& sensors) {
     this->sensors = &sensors;
+}
+
+void Thermometer::printAddress() {
+    Serial.print("Thermometer Address for ");
+    Serial.print(this->name);
+    Serial.print(": ");
+    for (uint8_t i = 0; i < 8; i++) {
+        if (this->address[i] < 16) Serial.print("0");
+        Serial.print(this->address[i], HEX);
+    }
+    Serial.println();
 }

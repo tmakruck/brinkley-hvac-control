@@ -18,4 +18,5 @@ public:
     bool IsFrigid();
     int retrieveTemperature();
     void setSensor(DallasTemperature &sensors);
+    void printAddress();
 };

@@ -21,13 +21,12 @@ public:
 
         for (size_t i = 0; i < N; i++) {
             thermometers[i]->setSensor(sensors);
-            this->printAddress(*thermometers[i]);
+            thermometers[i]->printAddress();
         }
 
         this->sensors.requestTemperatures();
     }
     
     void requestTemperatures();
-    void discoverThermometers(); 
-    void printAddress(Thermometer t);
+    void discoverThermometers();
 };
