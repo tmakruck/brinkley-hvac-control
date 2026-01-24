@@ -1,4 +1,4 @@
-□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□Initializing Thermometer Outside
+□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□Initializing Thermometer Outside
 Initializing Thermometer Underbelly
 Initializing Temperature Controller on pin 21 with 2 thermometers
 Found 3 devices on the bus
@@ -14,20 +14,22 @@ Initializing HVACZone for Bedroom
 Initializing HVACZone for Living Room
 Initializing HVACZone for Garage
 Requesting temperatures...
-Zone Bedroom signal state changed: 0x00 -> 0x10
-Current Input State   = 0x10, �
-Expected Output State = 0xF0
-Actual Output State   = 0xF0
+Zone Bedroom signal state changed: 0x00 -> 0x50
+Current Input State   = 0x50 | 0b1010000 | [Cold UBelly ] | 'F-'
+Expected Output State = 0x90
+Actual Output State   = 0x90
 Zone Living Room signal state changed: 0x00 -> 0x1A
 Falling back to default behavior for Living Room
-Current Input State   = 0x1A, �
+Current Input State   = 0x1A | 0b0011010 | [FanHi HP Cold ] | '-c'
 Expected Output State = 0xF0
 Actual Output State   = 0x1F
 Zone Garage signal state changed: 0x00 -> 0x18
 Falling back to default behavior for Garage
-Current Input State   = 0x18, �
+Current Input State   = 0x18 | 0b0011000 | [HP Cold ] | '-f'
 Expected Output State = 0xF0
 Actual Output State   = 0x1F
+Requesting temperatures...
+Requesting temperatures...
 Requesting temperatures...
 Requesting temperatures...
 Requesting temperatures...
