@@ -15,6 +15,7 @@ public:
     TemperatureController(int dataPin, Thermometer (&thermometers)[N]) 
         : dataPin(dataPin), oneWire(dataPin), sensors(&oneWire) {
         log_info("Initializing Temperature Controller on pin %d with %d thermometers", dataPin, N);
+        this->sensors.begin();
         log_debug("Setting Sensors on Onewire");
         this->discoverThermometers();
 
@@ -23,7 +24,6 @@ public:
             this->printAddress(thermometers[i]);
         }
 
-        this->sensors.begin();
         this->sensors.requestTemperatures();
     }
     
