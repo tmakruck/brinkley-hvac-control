@@ -35,9 +35,9 @@ struct SignalState {
         result += get(FAN_HI)      ? "FanHi " : "";
         result += get(AC)          ? "AC " : "";
         result += get(HEAT_PUMP)   ? "HP " : "";
-        result += get(HYSTERESIS)  ? "Outside Cold " : "Outside Hot ";
+        result += get(HYSTERESIS)  ? "OutsideCold " : "OutsideHot ";
         result += get(FURNACE)     ? "Furn " : "";
-        result += get(UNDERBELLY)  ? "UBelly Cold " : "UBelly Hot ";
+        result += get(UNDERBELLY)  ? "UBellyCold " : "UBellyHot ";
         if (result.length() == 0) result = "None";
         return result;
     }

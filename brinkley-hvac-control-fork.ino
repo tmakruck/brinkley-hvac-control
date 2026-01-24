@@ -18,7 +18,7 @@ unsigned long temperatureReadTimer = 0;
 
 
 #ifndef CONSTANTS
-  const int UNDERBELLY_TEMP_THRESHOLD_F = 45;
+  const int UNDERBELLY_TEMP_THRESHOLD_F = 50;
   const int TEMPERATURE_READ_INTERVAL_MS = 5000;
   const int INVALID_TEMP_THRESHOLD = -100;
   
