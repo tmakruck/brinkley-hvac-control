@@ -35,9 +35,9 @@ struct SignalState {
         result += get(FAN_HI)      ? "FanHi " : "";
         result += get(AC)          ? "AC " : "";
         result += get(HEAT_PUMP)   ? "HP " : "";
-        result += get(HYSTERESIS)  ? "Cold " : "";
+        result += get(HYSTERESIS)  ? "Outside Cold " : "Outside Hot ";
         result += get(FURNACE)     ? "Furn " : "";
-        result += get(UNDERBELLY)  ? "UBelly " : "";
+        result += get(UNDERBELLY)  ? "UBelly Cold " : "UBelly Hot ";
         if (result.length() == 0) result = "None";
         return result;
     }
@@ -49,6 +49,17 @@ struct SignalState {
             result += (bits & (1 << i)) ? '1' : '0';
         }
         return result;
+    }
+
+    // Get formatted console output string
+    const char* consoleData() const {
+        static char buffer[128];
+        snprintf(buffer, sizeof(buffer), "0x%02X | %s | [%s] | '%s'",
+                 bits,
+                 toBinary().c_str(),
+                 describe().c_str(),
+                 encode().c_str());
+        return buffer;
     }
 
     String encode() {

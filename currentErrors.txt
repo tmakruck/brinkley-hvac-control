@@ -18,6 +18,7 @@ Zone Bedroom signal state changed: 0x00 -> 0x50
 Current Input State   = 0x50 | 0b1010000 | [Cold UBelly ] | 'F-'
 Expected Output State = 0x90
 Actual Output State   = 0x90
+
 Zone Living Room signal state changed: 0x00 -> 0x1A
 Falling back to default behavior for Living Room
 Current Input State   = 0x1A | 0b0011010 | [FanHi HP Cold ] | '-c'

@@ -46,6 +46,40 @@ struct OutputState {
         return (bits >> b) & 1;
     }
 
+    // Get human-readable description of all bits
+    String describe() const {
+        String result = "";
+        // For most relays: HIGH = NC (Passthrough), LOW = NO (Active)
+        result += get(FAN_LO)          ? "FanLo:P " : "FanLo:Alt ";
+        result += get(FAN_HI)          ? "FanHi:P " : "FanHi:Alt/12V ";
+        result += get(AC)              ? "AC:P " : "AC:Alt ";
+        result += get(HEAT_PUMP)       ? "HP:P " : "HP:Alt/12V ";
+        result += get(SSR)             ? "SSR:On " : "SSR:Off ";  // SSR is direct logic
+        result += get(FURNACE)         ? "Furn:P " : "Furn:Alt ";
+        result += get(FURNACE_POWER)   ? "FPwr:No12V" : "FPwr:12V ";
+        result += get(HEAT_PUMP_POWER) ? "HPPwr:No12V " : "HPPwr:12V ";
+        return result;
+    }
+
+    // Get binary string representation
+    String toBinary() const {
+        String result = "0b";
+        for (int i = 7; i >= 0; i--) {
+            result += (bits & (1 << i)) ? '1' : '0';
+        }
+        return result;
+    }
+
+    // Get formatted console output string
+    const char* consoleData() const {
+        static char buffer[128];
+        snprintf(buffer, sizeof(buffer), "0x%02X | %s | [%s]",
+                 bits,
+                 toBinary().c_str(),
+                 describe().c_str());
+        return buffer;
+    }
+
     char encode(const OutputState& s) {
         return static_cast<char>(s.bits + 128);
     }

@@ -35,7 +35,9 @@ SignalState HVACZone::readSignalState() {
         zoneConfig.hasFurnace ? zoneConfig.pinFurnaceSense.read() : false,
         zoneConfig.hasFurnace ? UnderbellyThermometer.requiresHeatingMode(zoneConfig.underbellyThreshold) : false
     );
-    log_debug("Current Signal State: 0x%02X", currentSignalState.bits);
+
+    currentSignalState.consoleLine();
+    log_debug(currentSignalState.consoleData());
     return currentSignalState;
 }
 
@@ -50,7 +52,7 @@ OutputState HVACZone::readOutputState() {
         zoneConfig.hasFurnace ? zoneConfig.pinFurnacePower.read() : false,
         zoneConfig.hasFurnace ? zoneConfig.pinHPPower.read() : false
     );
-    log_debug("Current Output State: 0x%02X", currentOutputState.bits);
+    log_debug(currentOutputState.consoleData());
     return currentOutputState;
 }
 
@@ -81,13 +83,9 @@ void HVACZone::DoLoop(){
 
 void HVACZone::printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState) {
   //TODO get single-character status for each zone and print to LCD
-  log_info("Current Input State   = 0x%02X | %s | [%s] | '%s'", 
-           currentInputState.bits, 
-           currentInputState.toBinary().c_str(),
-           currentInputState.describe().c_str(),
-           currentInputState.encode().c_str());
-  log_info("Expected Output State = 0x%02X", calculatedState.bits);
-  log_info("Actual Output State   = 0x%02X", actualState.bits); 
+  log_info("Current Input State   = %s", currentInputState.consoleData());
+  log_info("Expected Output State = %s", calculatedState.consoleData());
+  log_info("Actual Output State   = %s", actualState.consoleData()); 
 }
 
 void HVACZone::updateOutputStates(OutputState newState){
