@@ -127,7 +127,7 @@ const char* statusString(bool isHigh) {
 #ifndef CONSTANTS
   #define HEAT_PUMP_HYSTERESIS_LOWER_F 34  // Turn OFF heat pump below this
   #define HEAT_PUMP_HYSTERESIS_UPPER_F 36  // Turn ON heat pump above this
-  #define UNDERBELLY_TEMP_THRESHOLD_F 50
+  #define UNDERBELLY_TEMP_THRESHOLD_F 35
   
   // Must be > 750 ms for Dallas Temp sensors to work properly
   const int LOOP_DELAY_MS = 800; // Dallas sensors: 750ms + 50ms buffer
@@ -672,6 +672,7 @@ public:
       bool heatPumpCallActive = isHeatPumpCall;
       bool underbellyTooCold = hasFurnace && underbellyTemp < UNDERBELLY_TEMP_THRESHOLD_F;
       bool hasCallForHeat = (furnaceCallActive || heatPumpCallActive);
+      bool isFrigid = outdoorTemp < 10;
   
       if (isHysteresisLowMode){
         // the temps are cold enough to use the space heaters
@@ -703,6 +704,16 @@ public:
               setFurnaceRelayState(OutputState::Passthrough);
               setFurnacePowerRelayState(PowerState::NoSupply12V);
             }
+            // if (isFrigid){
+            //   setSSR(SSRState::SSROn);
+            // }
+            // else{
+            //   setSSR(SSRState::SSROff);
+            // }
+          }
+          else
+          {
+            setSSR(SSRState::SSROff);
           }
         }
       }
@@ -769,7 +780,7 @@ public:
   HVAC Zone2(ZONE2_START, !controlsFurnace, SSR2_HEAT, LIVING_ROOM, 2);  
   HVAC Zone3(ZONE3_START, !controlsFurnace, SSR3_HEAT, GARAGE, 3);
 #pragma endregion
-
+int lastOutdoorTemp = 100;
 void loop() {
   unsigned long currentTime = millis();
   // Reset timer every 24 hours
@@ -783,11 +794,13 @@ void loop() {
   // Check if 10 seconds (10000 ms) have passed since last read
   if (timeDiff >= 5000) {
     log_debug("current Time: %lu minus %lu = %lu", currentTime, temperatureReadTimer, timeDiff);
-    log_info("Requesting temperatures...");
+    log_debug("Requesting temperatures...");
     outdoorTemp     = retrieveTemperature(Thermometer::Outside);
     underbellyTemp  = retrieveTemperature(Thermometer::Underbelly);
     thirdTemp       = retrieveTemperature(Thermometer::Third);
-
+    if (outdoorTemp != lastOutdoorTemp){
+      log_info("New outdoor Temp %d", outdoorTemp);
+    }
     // Hysteresis logic: use different thresholds for on/off
     if (isHysteresisLowMode) {
       // Currently in heat mode - need temp to rise above UPPER threshold to switch
@@ -815,6 +828,7 @@ void loop() {
     writeLCD(FIRST_LINE, "O:%d%s U:%d", outdoorTemp, isHysteresisLowMode ? "L" : "H", underbellyTemp);
     sensors.requestTemperatures();
     temperatureReadTimer = currentTime;  // Reset the timer
+    lastOutdoorTemp = outdoorTemp;
   }
 
   #if LCD == true
