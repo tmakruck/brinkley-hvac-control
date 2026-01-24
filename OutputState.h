@@ -72,7 +72,7 @@ struct OutputState {
 
     // Get formatted console output string
     const char* consoleData() const {
-        static char buffer[128];
+        static char buffer[256];
         snprintf(buffer, sizeof(buffer), "0x%02X | %s | [%s]",
                  bits,
                  toBinary().c_str(),

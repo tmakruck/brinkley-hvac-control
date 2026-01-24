@@ -66,7 +66,7 @@ struct SignalState {
     }
     // Safe console output
     const char* consoleData() {
-        static char buffer[200];
+        static char buffer[256];
         snprintf(buffer, sizeof(buffer),
                  "0x%02X | %s | [%s] | '%s' | \"%s\"",
                  bits,

@@ -4,7 +4,7 @@
 extern bool debugState;
 
 void log_info(const char* fmt, ...){
-  char buffer[128];
+  char buffer[256];
   va_list args;
   va_start(args, fmt);
   vsnprintf(buffer, sizeof(buffer), fmt, args);
@@ -15,7 +15,7 @@ void log_info(const char* fmt, ...){
 void log_debug(const char* fmt, ...){
   if (!debugState) return;
 
-  char buffer[128];
+  char buffer[256];
   va_list args;
   va_start(args, fmt);
   vsnprintf(buffer, sizeof(buffer), fmt, args);
