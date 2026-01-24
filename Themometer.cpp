@@ -2,22 +2,14 @@
 #include "logging.h"
 #include <DallasTemperature.h>
 
-Thermometer::Thermometer(char* name, DeviceAddress address) : name(name)
+Thermometer::Thermometer(const char* name, DeviceAddress address) : name(name)
 {
     log_info("Initializing Thermometer %s", name);
     memcpy(this->address, address, sizeof(DeviceAddress));
     this->lastTemperature = 150;
-
-    // DeviceAddress* deviceAddress;
-    // memcpy(deviceAddress, address, sizeof(DeviceAddress));
-    // for (uint8_t i = 0; i < 8; i++)
-    // {
-    //     if ((*deviceAddress)[i] < 16) Serial.print("0");
-    //     Serial.print((*deviceAddress)[i], HEX);
-    // }
 }
 
-bool Thermometer::requiresHeatingMode(int setPointF, int temperatureSwing = 1) {
+bool Thermometer::requiresHeatingMode(int setPointF, int temperatureSwing) {
     int outdoorTemp = this->retrieveTemperature();
     if (this->isHysteresisLowMode) {
         // Currently in spaceHeater/Furnace mode - need temp to rise above UPPER threshold to switch
@@ -31,7 +23,8 @@ bool Thermometer::requiresHeatingMode(int setPointF, int temperatureSwing = 1) {
             log_debug("%s Temperature dropped below %dF", this->name, setPointF-temperatureSwing);
             this->isHysteresisLowMode = true;
         }
-    }    
+    }  
+    return this->isHysteresisLowMode;  
 }
 
 int Thermometer::retrieveTemperature() {
@@ -39,8 +32,12 @@ int Thermometer::retrieveTemperature() {
     // request to all devices on the bus
     // After we got the temperatures, we can print them here.
     // We use the function ByIndex, and as an example get the temperature from the first sensor only.
-
-    float temperature = sensors->getTempF(this->address);
+    if (this->sensors == nullptr) {
+        log_info("Error: Sensor not initialized for %s", this->name);
+        return this->lastTemperature;  // Return cached value
+    }
+    
+    float temperature = this->sensors->getTempF(this->address);
     int tempInt = static_cast<int>(round(temperature));
     if (tempInt != this->lastTemperature) {
         this->lastTemperature = tempInt;

@@ -1,23 +1,7 @@
 #include "TemperatureController.h"
 #include "logging.h"
 
-TemperatureController::TemperatureController(int dataPin, Thermometer thermometers[]) : dataPin(dataPin) {
-    log_info("Initializing Temperature Controller on pin %d", dataPin);
-    OneWire oneWire=OneWire(dataPin);
-    this->oneWire = oneWire;
-    log_debug("Setting Sensors on Onewire");
-    this->sensors = DallasTemperature(&oneWire);
-    log_debug("moving on");
-    this->discoverThermometers();
-
-    for (int i = 0; i < sizeof(thermometers) / sizeof(thermometers[0]); i++) {
-        thermometers[i].setSensor(sensors);
-        this->printAddress(thermometers[i]);
-    }
-
-    this->sensors.begin();
-    this->sensors.requestTemperatures();
-}
+// Template constructor moved to header file
 
 void TemperatureController::requestTemperatures() {
     this->sensors.requestTemperatures();
@@ -43,11 +27,11 @@ void TemperatureController::discoverThermometers() {
 }
 
 void TemperatureController::printAddress(Thermometer t) {
-    DeviceAddress* deviceAddress;
+    DeviceAddress deviceAddress;
     memcpy(deviceAddress, t.address, sizeof(DeviceAddress));
     for (uint8_t i = 0; i < 8; i++)
     {
-        if ((*deviceAddress)[i] < 16) Serial.print("0");
-        Serial.print((*deviceAddress)[i], HEX);
+        if ((deviceAddress)[i] < 16) Serial.print("0");
+        Serial.print((deviceAddress)[i], HEX);
     }
 }

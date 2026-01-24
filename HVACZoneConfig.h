@@ -6,7 +6,7 @@
 class HVACZoneConfig
 {
 public:
-    char *roomName;
+    const char *roomName;
     bool hasFurnace = false;
     int hysteresisSetPoint_F;
     int underbellyThreshold;
@@ -30,7 +30,7 @@ public:
     Pin pinHPPower = Pin();
 
     HVACZoneConfig(){};
-    HVACZoneConfig(char *roomName, int startPin, int pinSSR, int hysteresisSetPoint_F, int furnaceSensePin = -1, int underbellyThreshold = 100)
+    HVACZoneConfig(const char *roomName, int startPin, int pinSSR, int hysteresisSetPoint_F, int furnaceSensePin = -1, int underbellyThreshold = 100)
         : roomName(roomName), startPin(startPin), hysteresisSetPoint_F(hysteresisSetPoint_F), hasFurnace(furnaceSensePin != -1), underbellyThreshold(underbellyThreshold)
     {
         log_info("Creating %s HVACZoneConfig", roomName);

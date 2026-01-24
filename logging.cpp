@@ -12,7 +12,7 @@ void log_info(const char* fmt, ...){
   Serial.println(buffer);
 }
 
-void log_debug(const char* fmt, ...){
+void log_debug(const const char* fmt, ...){
   if (!debugState) return;
 
   char buffer[128];

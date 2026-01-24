@@ -4,17 +4,17 @@
 class Thermometer
 {
 
-    DallasTemperature *sensors; // DallasTemperature instance
+    DallasTemperature *sensors = nullptr; // DallasTemperature instance
     unsigned long lastReadTime = 0;
     int lastTemperature;
     bool isHysteresisLowMode = false;
 public:
-    char* name;
+    const char* name;
     DeviceAddress address;
     Thermometer(){};
-    Thermometer(char* name, DeviceAddress address);
+    Thermometer(const char* name, DeviceAddress address);
 
-    bool requiresHeatingMode(int thresholdF, int temperatureSwing = 1);
+    bool requiresHeatingMode(int setPointF, int temperatureSwing = 1);
     bool IsFrigid();
     int retrieveTemperature();
     void setSensor(DallasTemperature &sensors);

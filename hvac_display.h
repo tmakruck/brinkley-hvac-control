@@ -145,7 +145,7 @@ extern bool debugState;
 
 
 
-    void writeLCD(int line, char* fmt, ...){
+    void writeLCD(int line, const char* fmt, ...){
       char buffer[LCD_LINE_LENGTH] = {};
       va_list args;
       va_start(args, fmt);

@@ -31,17 +31,15 @@ struct OutputState {
 
     OutputState(StateType relay_fanLo, StateType relay_fanHi, StateType relay_ac, StateType relay_heatPump, StateType relay_spaceHeater = SSROff,
                 StateType relay_furnace = Passthrough, StateType relay_furnacePower = NoSupply12V, StateType relay_heatPumpPower = NoSupply12V) {
-       
-        OutputState(
-            relay_fanLo.Value,
-            relay_fanHi.Value,
-            relay_ac.Value,
-            relay_heatPump.Value,
-            relay_spaceHeater.Value,
-            relay_furnace.Value,
-            relay_furnacePower.Value,
-            relay_heatPumpPower.Value
-        );
+        bits =
+            (relay_fanLo.Value         << FAN_LO)       |
+            (relay_fanHi.Value         << FAN_HI)       |
+            (relay_ac.Value            << AC)           |
+            (relay_heatPump.Value      << HEAT_PUMP)    |
+            (relay_spaceHeater.Value   << SSR)          |
+            (relay_furnace.Value       << FURNACE)      |
+            (relay_furnacePower.Value  << FURNACE_POWER)|
+            (relay_heatPumpPower.Value << HEAT_PUMP_POWER);
     }
 
     bool get(Bit b) const {

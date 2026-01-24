@@ -9,7 +9,7 @@ Pin::Pin() {
     this->inverted = false;
 }
 
-Pin::Pin(int pinNumber, char* pinName, int pinType, bool inverted = false) 
+Pin::Pin(int pinNumber, const char* pinName, int pinType, bool inverted) 
     : pinNumber(pinNumber), pinName(pinName), inverted(inverted) {
     pinMode(pinNumber, pinType);
 }

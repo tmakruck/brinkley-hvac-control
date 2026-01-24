@@ -5,9 +5,9 @@ class Pin {
     bool inverted = false;
 public:
     int pinNumber;
-    char* pinName;
+    const char* pinName;
     Pin();
-    Pin(int pinNumber, char* pinName, int pinType, bool inverted = false);
+    Pin(int pinNumber, const char* pinName, int pinType, bool inverted = false);
 
     bool read();
     bool set(StateType state);

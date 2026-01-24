@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 struct StateType{
-  char* Name;
+  const char* Name;
   int Value;
 };
 

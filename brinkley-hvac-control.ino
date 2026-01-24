@@ -14,16 +14,13 @@ using namespace Menu;
 using namespace std;
 
 bool debugState = false;
-bool deepDebug = true;
-bool isHysteresisLowMode = false;
-int outdoorTemp = 100;
-int underbellyTemp = 100;
-int thirdTemp = 100;
 unsigned long temperatureReadTimer = 0;
 
 
 #ifndef CONSTANTS
   const int UNDERBELLY_TEMP_THRESHOLD_F = 45;
+  const int TEMPERATURE_READ_INTERVAL_MS = 5000;
+  const int INVALID_TEMP_THRESHOLD = -100;
   
   // Must be > 750 ms for Dallas Temp sensors to work properly
   const int LOOP_DELAY_MS = 800; // Dallas sensors: 750ms + 50ms buffer
@@ -62,16 +59,9 @@ unsigned long temperatureReadTimer = 0;
   // Store each sensor's unique 64-bit address
 DeviceAddress outsideAddr    = { 0x28, 0xEC, 0x81, 0x87, 0x00, 0xE0, 0x49, 0xBC };
 DeviceAddress underbellyAddr = { 0x28, 0xA6, 0x0B, 0x87, 0x00, 0xA6, 0x0C, 0x38 };
-DeviceAddress thirdAddr      = { 0x28, 0x44, 0x71, 0x87, 0x00, 0x6B, 0x20, 0x12 };
+// DeviceAddress thirdAddr      = { 0x28, 0x44, 0x71, 0x87, 0x00, 0x6B, 0x20, 0x12 };
 Thermometer OutsideThermometer;
 Thermometer UnderbellyThermometer;
-Thermometer ThirdThermometer;
-
-Thermometer thermometers[] = {
-    OutsideThermometer,
-    UnderbellyThermometer,
-    ThirdThermometer
-};
 TemperatureController tempController;
 
 #pragma region HVAC setup
@@ -89,15 +79,15 @@ void loop() {
   unsigned long currentTime = millis();
   unsigned long timeDiff = currentTime - temperatureReadTimer;
   // Check if 10 seconds (10000 ms) have passed since last read
-  if (timeDiff >= 5000) {
+  if (timeDiff >= TEMPERATURE_READ_INTERVAL_MS) {
     log_info("Requesting temperatures...");
-    outdoorTemp     = OutsideThermometer.retrieveTemperature();
-    underbellyTemp  = UnderbellyThermometer.retrieveTemperature();
-    thirdTemp       = ThirdThermometer.retrieveTemperature();
+    int outdoorTemp     = OutsideThermometer.retrieveTemperature();
+    int underbellyTemp  = UnderbellyThermometer.retrieveTemperature();
+
 
     
 
-    if (outdoorTemp < -100 or underbellyTemp < -100) {
+    if (outdoorTemp < INVALID_TEMP_THRESHOLD or underbellyTemp < INVALID_TEMP_THRESHOLD) {
       log_info("Invalid temperature readings detected, skipping adjustments");
       Zone1.fallbackToDefaultBehavior();
       Zone2.fallbackToDefaultBehavior();
@@ -106,7 +96,7 @@ void loop() {
             
 
     
-    writeLCD(FIRST_LINE, "O:%d%s U:%d", outdoorTemp, isHysteresisLowMode ? "L" : "H", underbellyTemp);
+    writeLCD(FIRST_LINE, "O:%d U:%d", outdoorTemp, underbellyTemp);
     tempController.requestTemperatures();
     temperatureReadTimer = currentTime;  // Reset the timer
   }
@@ -138,18 +128,16 @@ void setup() {
   digitalWrite(HP_12V,    HIGH);
   
   delay(LOOP_DELAY_MS);
-  temperatureReadTimer = millis()-20000;  // Initialize timer
+  temperatureReadTimer = millis()-20000;  // Initialize timer to 20 seconds ago to force immediate read
 
   writeLCD(SECOND_LINE, " ");
 
   OutsideThermometer    = Thermometer("Outside",    outsideAddr);
   UnderbellyThermometer = Thermometer("Underbelly", underbellyAddr);
-  ThirdThermometer      = Thermometer("Third",      thirdAddr);
 
   Thermometer thermometers[] = {
       OutsideThermometer,
       UnderbellyThermometer,
-      ThirdThermometer
   };
 
   log_debug("Setting Temp Controller");
