@@ -22,7 +22,7 @@ HVACZone::HVACZone(HVACZoneConfig config) : zoneConfig(config)
     this->zoneConfig.pinHPRelay.set(Passthrough);
     // And turn off the SSR
 
-    this->zoneConfig.pinSpaceHeaterRelay.set(SSROff);
+    this->zoneConfig.pinSpaceHeaterRelay.set(SpaceHeaterOff);
 
     this->previousSignalState = SignalState();
 }
@@ -138,7 +138,7 @@ void HVACZone::fallbackToDefaultBehavior()
         Passthrough, // furnace
         NoSupply12V, // furnacePower
         NoSupply12V, // heatPumpPower
-        SSROff       // SSR
+        SpaceHeaterOff       // SSR
     );
     this->updateOutputStates(newOutputState);
 }
@@ -160,7 +160,7 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
     StateType newFanHiRelayState = Passthrough;
     StateType newACRelayState = Passthrough;
     StateType newHeatPumpRelayState = Passthrough;
-    StateType newSpaceHeaterState = SSROff;
+    StateType newSpaceHeaterState = SpaceHeaterOff;
     StateType newFurnaceRelayState = Passthrough;
     StateType newFurnacePowerRelayState = NoSupply12V;
     StateType newHeatPumpPowerRelayState = NoSupply12V;
@@ -192,7 +192,7 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
                 newFurnaceRelayState = Supply12V;
                 newFurnacePowerRelayState = Supply12V;
             }
-            newSpaceHeaterState = SSROff;
+            newSpaceHeaterState = SpaceHeaterOff;
         }
     }
 
@@ -201,7 +201,7 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
         // never run space heater above threshold
         // never run furnace above threshold
         // always pass heat pump through
-        newSpaceHeaterState = SSROff;
+        newSpaceHeaterState = SpaceHeaterOff;
 
         if (furnaceCallActive)
         {

@@ -16,30 +16,32 @@ struct OutputState {
 
     uint8_t bits = 0;
 
-    OutputState(int fanLo=Passthrough.Value, int fanHi=Passthrough.Value, int ac=Passthrough.Value, int heatPump=Passthrough.Value, int spaceHeater=SSROff.Value, 
-        int furnace=0, int furnacePower=NoSupply12V.Value, int heatPumpPower=NoSupply12V.Value) {
-        bits =
-            (heatPumpPower << HEAT_PUMP_POWER) |
-            (furnacePower  << FURNACE_POWER)|
-            (furnace       << FURNACE)      |
-            (spaceHeater   << SSR)          |
-            (fanLo      << FAN_LO)     |
-            (fanHi      << FAN_HI)     |
-            (ac         << AC)         |
-            (heatPump   << HEAT_PUMP);
+    OutputState(bool fanLo=Passthrough.Value, bool fanHi=Passthrough.Value, bool ac=Passthrough.Value, bool heatPump=Passthrough.Value, bool spaceHeater=SpaceHeaterOff.Value, 
+        bool furnace=0, bool furnacePower=NoSupply12V.Value, bool heatPumpPower=NoSupply12V.Value) {
+        bits = 0;
+
+        bitWrite(bits, HEAT_PUMP_POWER, heatPumpPower);
+        bitWrite(bits, FURNACE_POWER,   furnacePower);
+        bitWrite(bits, FURNACE,         furnace);
+        bitWrite(bits, SSR,             spaceHeater);
+        bitWrite(bits, FAN_LO,          fanLo);
+        bitWrite(bits, FAN_HI,          fanHi);
+        bitWrite(bits, AC,              ac);
+        bitWrite(bits, HEAT_PUMP,       heatPump);
     }
 
-    OutputState(StateType fanLo, StateType fanHi, StateType ac, StateType heatPump, StateType spaceHeater = SSROff,
+    OutputState(StateType fanLo, StateType fanHi, StateType ac, StateType heatPump, StateType spaceHeater = SpaceHeaterOff,
                 StateType furnace = Passthrough, StateType furnacePower = NoSupply12V, StateType heatPumpPower = NoSupply12V) {
-        bits =
-            (fanLo.Value         << FAN_LO)       |
-            (fanHi.Value         << FAN_HI)       |
-            (ac.Value            << AC)           |
-            (heatPump.Value      << HEAT_PUMP)    |
-            (spaceHeater.Value   << SSR)          |
-            (furnace.Value       << FURNACE)      |
-            (furnacePower.Value  << FURNACE_POWER)|
-            (heatPumpPower.Value << HEAT_PUMP_POWER);
+        bits = 0;
+
+        bitWrite(bits, HEAT_PUMP_POWER, heatPumpPower.Value);
+        bitWrite(bits, FURNACE_POWER,   furnacePower.Value);
+        bitWrite(bits, FURNACE,         furnace.Value);
+        bitWrite(bits, SSR,             spaceHeater.Value);
+        bitWrite(bits, FAN_LO,          fanLo.Value);
+        bitWrite(bits, FAN_HI,          fanHi.Value);
+        bitWrite(bits, AC,              ac.Value);
+        bitWrite(bits, HEAT_PUMP,       heatPump.Value);
     }
 
     int get(Bit b) const {
@@ -52,16 +54,16 @@ struct OutputState {
 
         result += "[";
         // Group A (left)
-        result += (get(HEAT_PUMP_POWER)==NoSupply12V.Value ? "HPPwr- " : "HPPwr+ ");
-        result += (get(FURNACE_POWER)==NoSupply12V.Value   ? "FPwr-"   : "FPwr+ ");
-        result += (get(FURNACE)==Passthrough.Value         ? "Furn:P " : "Furn:Alt ");
+        result += (get(HEAT_PUMP_POWER) ? "HPPwr+ " : "HPPwr- ");
+        result += (get(FURNACE_POWER)   ? "FPwr+ "   : "FPwr- ");
+        result += (get(FURNACE)         ? "Furn:Alt " : "Furn:P ");
          result += "][";
         // Group B (right)
-        result += (get(SSR)==SpaceHeaterOn.Value                   ? "SSR:On " : "SSR:Off ");  // SSR is direct logic
-        result += (get(FAN_LO)==Passthrough.Value          ? "FanLo:P " : "FanLo:Alt ");
-        result += (get(FAN_HI)==Passthrough.Value          ? "FanHi:P " : "FanHi:Alt/12V ");
-        result += (get(AC)==Passthrough.Value              ? "AC:P " : "AC:Alt ");
-        result += (get(HEAT_PUMP)==Passthrough.Value       ? "HP:P " : "HP:Alt/12V ");
+        result += (get(SSR)             ? "SSR:On " : "SSR:Off ");  // SSR is direct logic
+        result += (get(FAN_LO)          ? "FanLo:Alt " : "FanLo:P ");
+        result += (get(FAN_HI)          ? "FanHi:Alt " : "FanHi:P ");
+        result += (get(AC)              ? "AC:Alt " : "AC:P ");
+        result += (get(HEAT_PUMP)       ? "HP:Alt " : "HP:P ");
         result += "]";
         return result;
     }

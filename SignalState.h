@@ -16,21 +16,22 @@ struct SignalState {
 
     uint8_t bits = 0;
 
-    SignalState(int fanLo=LOW, int fanHi=LOW, int ac=LOW, int heatPump=LOW, int hysteresis=HIGH, 
-        int furnace=0, int underbelly=0, int unused=0)
+    SignalState(bool fanLo=false, bool fanHi=false, bool ac=false, bool heatPump=false,
+                bool hysteresis=true, bool furnace=false, bool underbelly=false, bool unused=false)
     {
-        bits =
-            (unused     << UNUSED)     |
-            (underbelly << UBELLYCALL) |
-            (furnace    << FURNACE)    |
-            (hysteresis << HYSTERESIS) |
-            (fanLo      << FAN_LO)     |
-            (fanHi      << FAN_HI)     |
-            (ac         << AC)         |
-            (heatPump   << HEAT_PUMP);
+        bits = 0;
+
+        bitWrite(bits, UNUSED,     unused);
+        bitWrite(bits, UBELLYCALL, underbelly);
+        bitWrite(bits, FURNACE,    furnace);
+        bitWrite(bits, HYSTERESIS, hysteresis);
+        bitWrite(bits, FAN_LO,     fanLo);
+        bitWrite(bits, FAN_HI,     fanHi);
+        bitWrite(bits, AC,         ac);
+        bitWrite(bits, HEAT_PUMP,  heatPump);
     }
 
-    int get(Bit b) const {
+    bool get(Bit b) const {
         return (bits >> b) & 1;
     }
 
@@ -40,16 +41,16 @@ struct SignalState {
 
         result += "[";
         // Group A (left)
-        result += get(UNUSED)==LOW      ? ""     : "";
-        result += get(UBELLYCALL)==HIGH  ? "UBellyCall+ "  : "UBellyCall- ";
-        result += get(FURNACE)==HIGH    ? "Furn+ "       : "Furn- ";
+        result += get(UNUSED)     ? "+ "             : "- ";
+        result += get(UBELLYCALL) ? "UBellyCall+ " : "UBellyCall- ";
+        result += get(FURNACE)    ? "Furn+ "       : "Furn- ";
         result += "][";
         // Group B (right)
-        result += get(HYSTERESIS)==HIGH ? "Hys+ "        : "Hys- ";
-        result += get(FAN_LO)==HIGH     ? "FanLo+ "      : "FanLo- ";
-        result += get(FAN_HI)==HIGH     ? "FanHi+ "      : "FanHi- ";
-        result += get(AC)==HIGH         ? "AC+ "         : "AC- ";
-        result += get(HEAT_PUMP)==HIGH  ? "HP+ "         : "HP- ";
+        result += get(HYSTERESIS) ? "Hys+ "        : "Hys- ";
+        result += get(FAN_LO)     ? "FanLo+ "      : "FanLo- ";
+        result += get(FAN_HI)     ? "FanHi+ "      : "FanHi- ";
+        result += get(AC)         ? "AC+ "         : "AC- ";
+        result += get(HEAT_PUMP)  ? "HP+ "         : "HP- ";
         result += "]";
         return result;
     }
@@ -80,10 +81,11 @@ struct SignalState {
         char highChar = getHighBitCharacter();
         char lowChar  = getLowBitCharacter();
 
-        String out;
-        out += highChar;
-        out += lowChar;
-        return out;
+        char out[3];
+        out[0] = highChar;
+        out[1] = lowChar;
+        out[2] = '\0';
+        return String(out);
     }
 
     String Description() {
@@ -111,10 +113,6 @@ struct SignalState {
             case 0b001: return 'F';
             case 0b010: return 'U';
             case 0b011: return 'B';
-            case 0b100: return '/'; 
-            case 0b101: return '/';
-            case 0b110: return '/';
-            case 0b111: return '/';
             default:    return '?';
         }
     }

@@ -17,5 +17,5 @@ extern const StateType Supply12V;
 
 // SSR is not inverted logic so they get their own set
 extern const StateType SpaceHeaterOn;
-extern const StateType SSROff;
+extern const StateType SpaceHeaterOff;
 
