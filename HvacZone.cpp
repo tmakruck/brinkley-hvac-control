@@ -145,108 +145,95 @@ void HVACZone::fallbackToDefaultBehavior()
 
 OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
 {
-    bool hasFurnace = this->zoneConfig.hasFurnace;
-    bool isFurnaceCall = currentSignalState.get(SignalState::Bit::FURNACE);
-    bool isHeatPumpCall = currentSignalState.get(SignalState::Bit::HEAT_PUMP);
-    
-    bool furnaceCallActive = hasFurnace && isFurnaceCall;
+    ZoneOutputs o;
+    bool hasFurnace    = this->zoneConfig.hasFurnace;
+    bool hysteresisLow = (currentSignalState.get(SignalState::HYSTERESIS) == LOW);
 
-    bool heatPumpCallActive = isHeatPumpCall;
-
-    bool isUnderbellyCall = currentSignalState.get(SignalState::Bit::UBELLYCALL);
-    bool hasCallForHeat = (furnaceCallActive || isHeatPumpCall);
-
-    StateType newFanLoRelayState = Passthrough;
-    StateType newFanHiRelayState = Passthrough;
-    StateType newACRelayState = Passthrough;
-    StateType newHeatPumpRelayState = Passthrough;
-    StateType newSpaceHeaterState = SpaceHeaterOff;
-    StateType newFurnaceRelayState = Passthrough;
-    StateType newFurnacePowerRelayState = NoSupply12V;
-    StateType newHeatPumpPowerRelayState = NoSupply12V;
-
-    if (currentSignalState.get(SignalState::Bit::HYSTERESIS) == LOW)
-    {
-        // the temps are cold enough to use the space heaters
-        // don't pass the heat pump through
-        newFanLoRelayState = BlockSignal;
-        newFanHiRelayState = BlockSignal;
-        newACRelayState = BlockSignal;
-        newHeatPumpRelayState = BlockSignal;
-
-        if (hasCallForHeat)
-        {
-            // turn on the ssr for the zone
-            newSpaceHeaterState = SpaceHeaterOn;
-            if (hasFurnace)
-            {
-                newFurnaceRelayState = Passthrough;
-                newFurnacePowerRelayState = NoSupply12V;
-            }
-        }
-        else
-        {
-
-            if (hasFurnace && isUnderbellyCall)
-            {
-                newFurnaceRelayState = Supply12V;
-                newFurnacePowerRelayState = Supply12V;
-            }
-            newSpaceHeaterState = SpaceHeaterOff;
-        }
+    if (hysteresisLow) {
+        this->applyHysteresisLowRules(currentSignalState, o, hasFurnace);
+    } else {
+        this->applyNormalModeRules(currentSignalState, o, hasFurnace);
     }
 
-    else
-    { // NOT HysteresisLowMode
-        // never run space heater above threshold
-        // never run furnace above threshold
-        // always pass heat pump through
-        newSpaceHeaterState = SpaceHeaterOff;
+    return OutputState(
+        o.fanLo,
+        o.fanHi,
+        o.ac,
+        o.heatPump,
+        o.spaceHeater,
+        o.furnace,
+        o.furnacePower,
+        o.heatPumpPower
+    );
+}
 
-        if (furnaceCallActive)
-        {
-            log_debug("Redirecting furnace call to heat pump");
-            newHeatPumpPowerRelayState = Supply12V;
-            newFanHiRelayState = Supply12V;
-            newHeatPumpRelayState = Supply12V;
-            newACRelayState = Passthrough;
+void HVACZone::applyHysteresisLowRules(const SignalState& s, ZoneOutputs& o, bool hasFurnace) {
+    bool furnaceCall    = s.get(SignalState::FURNACE);
+    bool heatPumpCall   = s.get(SignalState::HEAT_PUMP);
+    bool underbellyCall = s.get(SignalState::UBELLYCALL);
 
-            if (isUnderbellyCall)
-            {
-                newFurnacePowerRelayState = Supply12V;
-                newFurnaceRelayState = Supply12V;
-            }
-            else
-            {
-                newFurnacePowerRelayState = NoSupply12V;
-                newFurnaceRelayState = NoSupply12V;
-            }
+    // Block all HVAC signals
+    o.fanLo   = BlockSignal;
+    o.fanHi   = BlockSignal;
+    o.ac      = BlockSignal;
+    o.heatPump = BlockSignal;
+
+    bool hasCallForHeat = (furnaceCall || heatPumpCall);
+
+    if (hasCallForHeat) {
+        o.spaceHeater = SpaceHeaterOn;
+        if (hasFurnace) {
+            o.furnace      = Passthrough;
+            o.furnacePower = NoSupply12V;
         }
-        else
-        {
-            newFanLoRelayState = Passthrough;
-            newFanHiRelayState = Passthrough;
-            newACRelayState = Passthrough;
-            newHeatPumpRelayState = Passthrough;
+    } else {
+        if (hasFurnace && underbellyCall) {
+            o.furnace      = Supply12V;
+            o.furnacePower = Supply12V;
+        }
+        o.spaceHeater = SpaceHeaterOff;
+    }
+}
 
-            if (hasFurnace)
-            {
-                newHeatPumpPowerRelayState = NoSupply12V;
-                if (isUnderbellyCall && !isFurnaceCall)
-                {
-                    newFurnaceRelayState = Supply12V;
-                    newFurnacePowerRelayState = Supply12V;
-                }
-                else
-                {
-                    newFurnaceRelayState = Passthrough;
-                    newFurnacePowerRelayState = NoSupply12V;
-                }
+void HVACZone::applyNormalModeRules(const SignalState& s, ZoneOutputs& o, bool hasFurnace) {
+    bool furnaceCall    = s.get(SignalState::FURNACE);
+    bool underbellyCall = s.get(SignalState::UBELLYCALL);
+
+    // Never run space heater above threshold
+    o.spaceHeater = SpaceHeaterOff;
+
+    if (furnaceCall) {
+        log_debug("Redirecting furnace call to heat pump");
+
+        o.heatPumpPower = Supply12V;
+        o.fanHi         = Supply12V;
+        o.heatPump      = Supply12V;
+        o.ac            = Passthrough;
+
+        if (underbellyCall) {
+            o.furnace      = Supply12V;
+            o.furnacePower = Supply12V;
+        } else {
+            o.furnace      = NoSupply12V;
+            o.furnacePower = NoSupply12V;
+        }
+    } else {
+        // Pass everything through
+        o.fanLo   = Passthrough;
+        o.fanHi   = Passthrough;
+        o.ac      = Passthrough;
+        o.heatPump = Passthrough;
+
+        if (hasFurnace) {
+            o.heatPumpPower = NoSupply12V;
+
+            if (underbellyCall) {
+                o.furnace      = Supply12V;
+                o.furnacePower = Supply12V;
+            } else {
+                o.furnace      = Passthrough;
+                o.furnacePower = NoSupply12V;
             }
         }
     }
-
-    OutputState newOutputState = OutputState(newFanLoRelayState, newFanHiRelayState, newACRelayState, newHeatPumpRelayState, newSpaceHeaterState,
-                                             newFurnaceRelayState, newFurnacePowerRelayState, newHeatPumpPowerRelayState);
-    return newOutputState;
 }
