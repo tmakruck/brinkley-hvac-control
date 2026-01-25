@@ -5,13 +5,14 @@
 
 class HVACZoneConfig
 {
+    int startPin;
 public:
     const char *roomName;
     bool hasFurnace = false;
     int hysteresisSetPoint_F;
     int underbellyThreshold;
+    int lcdOffset = 0;
     // Input Signals
-    int startPin;
     Pin pinFanLoSense;
     Pin pinFanHiSense;
     Pin pinACSense;
@@ -30,8 +31,8 @@ public:
     Pin pinHPPower = Pin();
 
     HVACZoneConfig(){};
-    HVACZoneConfig(const char *roomName, int startPin, int pinSSR, int hysteresisSetPoint_F, int furnaceSensePin = -1, int underbellyThreshold = 100)
-        : roomName(roomName), startPin(startPin), hysteresisSetPoint_F(hysteresisSetPoint_F), hasFurnace(furnaceSensePin != -1), underbellyThreshold(underbellyThreshold)
+    HVACZoneConfig(const char *roomName, int lcdOffset, int startPin, int pinSSR, int hysteresisSetPoint_F, int furnaceSensePin = -1, int underbellyThreshold = 100)
+        : roomName(roomName), lcdOffset(lcdOffset), startPin(startPin), hysteresisSetPoint_F(hysteresisSetPoint_F), hasFurnace(furnaceSensePin != -1), underbellyThreshold(underbellyThreshold)
     {
         log_info("Creating %s HVACZoneConfig", roomName);
         this->pinFanLoSense = Pin(startPin, "Fan Lo Sense", INPUT_PULLUP);

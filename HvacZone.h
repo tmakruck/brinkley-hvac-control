@@ -14,12 +14,12 @@ class HVACZone {
     OutputState readOutputState();
     void updateOutputStates(OutputState newState);
     OutputState validateNewState(OutputState newCalculatedState);
-    void printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState);
+    char* printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState);
     OutputState CalculateNewOutputState(SignalState currentSignalState);
 public:
     HVACZone(){};
     HVACZone(HVACZoneConfig config);
-    void DoLoop();
+    char* DoLoop();
     void fallbackToDefaultBehavior();
 };
 

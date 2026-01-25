@@ -166,6 +166,7 @@ extern bool debugState;
         lcd.setCursor(position, line);
         lcd.print(input);
       #endif
+      
     }
 
     void writeError(int line, uint8_t value) {

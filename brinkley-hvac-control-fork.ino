@@ -18,7 +18,7 @@ unsigned long temperatureReadTimer = 0;
 
 
 #ifndef CONSTANTS
-  const int UNDERBELLY_TEMP_THRESHOLD_F = 50;
+  const int UNDERBELLY_TEMP_THRESHOLD_F = 40;
   const int TEMPERATURE_READ_INTERVAL_MS = 5000;
   const int INVALID_TEMP_THRESHOLD = -100;
   
@@ -104,10 +104,13 @@ void loop() {
   #if LCD == true
     handleButtonPress();
   #endif
-  
-  Zone1.DoLoop();
-  Zone2.DoLoop();
-  Zone3.DoLoop();
+
+  char* zone1Result = Zone1.DoLoop();
+  writeLCD(SECOND_LINE, Zone1.zoneConfig.lcdOffset, zone1Result);
+  char* zone2Result = Zone2.DoLoop();
+  writeLCD(SECOND_LINE, Zone2.zoneConfig.lcdOffset, zone2Result);
+  char* zone3Result = Zone3.DoLoop();
+  writeLCD(SECOND_LINE, Zone3.zoneConfig.lcdOffset, zone3Result);
 
 }
 
@@ -143,9 +146,9 @@ void setup() {
   log_debug("Setting Temp Controller");
   tempController = new TemperatureController(Temperature_Data, thermometers);
   log_debug("Setting Zone Configs");
-  zone1Config = HVACZoneConfig("Bedroom", ZONE1_START, SSR1_HEAT, 35, FURN_SENSE, UNDERBELLY_TEMP_THRESHOLD_F);
-  zone2Config = HVACZoneConfig("Living Room", ZONE2_START, SSR2_HEAT, 35);
-  zone3Config = HVACZoneConfig("Garage", ZONE3_START, SSR3_HEAT, 39);
+  zone1Config = HVACZoneConfig("Bedroom", 0, ZONE1_START, SSR1_HEAT, 35, FURN_SENSE, UNDERBELLY_TEMP_THRESHOLD_F);
+  zone2Config = HVACZoneConfig("Living Room", 6, ZONE2_START, SSR2_HEAT, 35);
+  zone3Config = HVACZoneConfig("Garage", 11, ZONE3_START, SSR3_HEAT, 39);
 
   Zone1 = HVACZone(zone1Config);  
   Zone2 = HVACZone(zone2Config);  

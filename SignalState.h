@@ -77,19 +77,8 @@ struct SignalState {
 
     // Encoding
     String encode() {
-        uint8_t b = bits;
-
-        // 3-bit high group
-        uint8_t highBits =
-            ((b >> UNUSED)     & 1) << 2 |
-            ((b >> UNDERBELLY) & 1) << 1 |
-            ((b >> FURNACE)    & 1);
-
-        // 5-bit low group
-        uint8_t lowBits = b & 0x1F;
-
-        char highChar = getHighBitCharacter(highBits);
-        char lowChar  = getLowBitCharacter(lowBits);
+        char highChar = getHighBitCharacter();
+        char lowChar  = getLowBitCharacter();
 
         String out;
         out += highChar;
@@ -98,19 +87,8 @@ struct SignalState {
     }
 
     String Description() {
-        uint8_t b = bits;
-
-        // 3-bit high group
-        uint8_t highBits =
-            ((b >> UNUSED)     & 1) << 2 |
-            ((b >> UNDERBELLY) & 1) << 1 |
-            ((b >> FURNACE)    & 1);
-
-        // 5-bit low group
-        uint8_t lowBits = b & 0x1F;
-
-        String highString = getHighBitString(highBits);
-        String lowString  = getLowBitString(lowBits);
+        String highString = getHighBitString();
+        String lowString  = getLowBitString();
 
         String out;
         out += highString;
@@ -120,8 +98,15 @@ struct SignalState {
     }
 
     // 3-bit high table (8 entries)
-    char getHighBitCharacter(uint8_t bits) {
-        switch (bits) {
+    char getHighBitCharacter() {
+        uint8_t b = bits;
+
+        // 3-bit high group
+        uint8_t highBits =
+            ((b >> UNUSED)     & 1) << 2 |
+            ((b >> UNDERBELLY) & 1) << 1 |
+            ((b >> FURNACE)    & 1);
+        switch (highBits) {
             case 0b000: return '-';
             case 0b001: return 'F';
             case 0b010: return 'U';
@@ -135,8 +120,12 @@ struct SignalState {
     }
     
     // 5-bit low table (32 entries)
-    char getLowBitCharacter(uint8_t bits) {
-        switch (bits) {
+    char getLowBitCharacter() {
+        uint8_t b = bits;
+
+        // 5-bit low group
+        uint8_t lowBits = b & 0x1F;
+        switch (lowBits) {
             // Low Hystersis mode
             case 0b00000: return '_';
             case 0b01000: return 'f';
@@ -159,8 +148,8 @@ struct SignalState {
         }
     }
 
-    String getHighBitString(uint8_t bits){        
-        char highBitChar = getHighBitCharacter(bits);
+    String getHighBitString(){        
+        char highBitChar = getHighBitCharacter();
         String result ="";
         result += highBitChar;
         result += " - ";
@@ -177,9 +166,9 @@ struct SignalState {
         return result;
         
     }
-   
-    String getLowBitString(uint8_t bits){       
-        char lowBitChar = getLowBitCharacter(bits);
+
+    String getLowBitString(){       
+        char lowBitChar = getLowBitCharacter();
         String result ="";
         result += lowBitChar;
         result += " - ";
