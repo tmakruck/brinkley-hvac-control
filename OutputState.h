@@ -78,7 +78,7 @@ struct OutputState {
     }
     // Safe console output
     const char* consoleData() {
-        static char buffer[200];
+        static char buffer[256];
         snprintf(buffer, sizeof(buffer),
                  "0x%02X | %s | [%s] | '%s' | \"%s\"",
                  bits,
@@ -94,21 +94,16 @@ struct OutputState {
         char highChar = getHighBitCharacter();
         char lowChar  = getLowBitCharacter();
 
-        String out;
-        out += highChar;
-        out += lowChar;
-        return out;
+        char out[3];
+        out[0] = highChar;
+        out[1] = lowChar;
+        out[2] = '\0';
+
+        return String(out);
     }
 
     String Description() {
-        String highString = getHighBitString();
-        String lowString  = getLowBitString();
-
-        String out;
-        out += highString;
-        out += "/";
-        out += lowString;
-        return out;
+        return getHighBitString() + "/" + getLowBitString();
     }
 
     // 3-bit high table (8 entries)
@@ -137,10 +132,8 @@ struct OutputState {
     
     // 5-bit low table (32 entries)
     char getLowBitCharacter() {
-        uint8_t b = bits;
+        uint8_t lowBits = bits & 0x1F;
 
-        // 5-bit low group
-        uint8_t lowBits = b & 0x1F;
         switch (lowBits) {
             // SSR Off
             case 0b00000: return '_'; // Everything else is passthrough
@@ -183,39 +176,35 @@ struct OutputState {
 
     String getHighBitString(){        
         char highBitChar = getHighBitCharacter();
-        String result ="";
+        String result = "";
         result += highBitChar;
         result += " - ";
+
         switch (highBitChar) {
             case 'P': result += "Furnace Passthrough"; break;
             case 'F': result += "Furnace Bypass"; break;
             case 'M': result += "Force Furnace"; break;
             case 'H': result += "Force Heat Pump"; break;
             case 'B': result += "Force Both"; break;
-
-            default: result += "Invalid Case";
+            default:  result += "Invalid Case";
         }
-
         return result;
-        
     }
 
     String getLowBitString(){       
         char lowBitChar = getLowBitCharacter();
-        String result ="";
+        String result = "";
         result += lowBitChar;
         result += " - ";
+
         switch (lowBitChar) {
             // Low Hystersis mode
             case '_': result += "SSR Off, All Passthrough"; break;
             case 'S': result += "SSR On, All Passthrough"; break;
             case 'o': result += "SSR Off, All Alternate"; break;
             case 'O': result += "SSR On, All Alternate"; break;
-
-            default: result += "Unknown Output State";
+            default:  result += "Unknown Output State";
         }
-
         return result;
-        
     }
 };
