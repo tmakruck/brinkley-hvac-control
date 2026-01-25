@@ -10,20 +10,27 @@ Thermometer::Thermometer(const char* name, DeviceAddress address) : name(name)
 }
 
 bool Thermometer::getHysteresisMode(int setPointF, int temperatureSwing) {
-    int outdoorTemp = this->retrieveTemperature();
+    int currentTemp = this->retrieveTemperature();
     if (this->hysteresisMode == LOW) {
         // Currently in spaceHeater/Furnace mode - need temp to rise above UPPER threshold to switch
-        if (outdoorTemp >= setPointF+temperatureSwing) {
-            log_debug("%s Temperature rising above %dF", this->name, setPointF+temperatureSwing);
+        if (currentTemp >= setPointF+temperatureSwing) {
+            log_info("%s Temperature rising above %dF", this->name, setPointF+temperatureSwing);
             this->hysteresisMode = HIGH;
         }
-        } else {
+        else {
+            log_debug("%s Temperature remains below %dF", this->name, setPointF+temperatureSwing);
+        }
+    } else {
         // Currently in heat pump mode - need temp to drop below LOWER threshold to switch
-        if (outdoorTemp < setPointF-temperatureSwing) {
-            log_debug("%s Temperature dropped below %dF", this->name, setPointF-temperatureSwing);
+        if (currentTemp < setPointF-temperatureSwing) {
+            log_info("%s Temperature dropped below %dF", this->name, setPointF-temperatureSwing);
             this->hysteresisMode = LOW;
         }
-    }  
+        else {
+            log_debug("%s Temperature remains above %dF", this->name, setPointF-temperatureSwing);
+        }
+    }
+
     return this->hysteresisMode;  
 }
 
@@ -56,11 +63,6 @@ int Thermometer::retrieveTemperature() {
     }
 
     return this->lastTemperature;
-}
-
-bool Thermometer::IsFrigid(){
-    int outdoorTemp = this->retrieveTemperature();
-    return outdoorTemp < 10;
 }
 
 void Thermometer::setSensor(DallasTemperature& sensors) {

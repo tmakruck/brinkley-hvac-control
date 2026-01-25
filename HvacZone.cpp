@@ -78,22 +78,22 @@ char* HVACZone::DoLoop()
         OutputState newCalculatedState = this->CalculateNewOutputState(currentInputState);
         this->updateOutputStates(newCalculatedState);
         OutputState actualNewState = this->validateNewState(newCalculatedState);
-
         this->previousInputState = currentInputState;
+        return this->printPinStates(currentInputState, newCalculatedState, actualNewState);
     }
-    return this->printPinStates(currentInputState, OutputState(), OutputState());
+    return nullptr;
 }
 
 char* HVACZone::printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState)
 {
-    log_debug("Current Input State   = %s", currentInputState.consoleData());
-    log_debug("Expected Output State = %s", calculatedState.consoleData());
-    log_debug("Actual Output State   = %s", actualState.consoleData());
+    log_info("Current Input State   = %s", currentInputState.consoleData());
+    log_info("Expected Output State = %s", calculatedState.consoleData());
+    log_info("Actual Output State   = %s", actualState.consoleData());
 
     int lcdLine = 2;
     int position = this->zoneConfig.lcdOffset;
 
-    int bufferSize = this->zoneConfig.hasFurnace ? 5 : 4;
+    int bufferSize = 16;
     String inputStateStr = "";
     if (this->zoneConfig.hasFurnace)
     {
@@ -102,9 +102,11 @@ char* HVACZone::printPinStates(SignalState currentInputState, OutputState calcul
     inputStateStr += currentInputState.getLowBitCharacter();
     inputStateStr += ":";
     inputStateStr += actualState.encode();
+    inputStateStr += '\0';
 
-    static char buffer[bufferSize];
+    char buffer[bufferSize];
     snprintf(buffer, sizeof(buffer), inputStateStr.c_str());
+    log_info("Zone %s LCD Output: %s", this->zoneConfig.roomName, buffer);
     return buffer;
 }
 
@@ -148,11 +150,9 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
     bool isHeatPumpCall = currentSignalState.get(SignalState::Bit::HEAT_PUMP);
     bool heatPumpCallActive = isHeatPumpCall;
 
-    bool underbellyTooCold = currentSignalState.get(SignalState::Bit::UNDERBELLY);
+    bool underbellyTooCold = currentSignalState.get(SignalState::Bit::UNDERBELLY)==LOW;
     bool hasCallForHeat = (furnaceCallActive || heatPumpCallActive);
     bool isHysteresisLowMode = currentSignalState.get(SignalState::Bit::HYSTERESIS) == LOW;
-
-    bool isFrigid = OutsideThermometer.IsFrigid();
 
     StateType newFanLoRelayState = Passthrough;
     StateType newFanHiRelayState = Passthrough;

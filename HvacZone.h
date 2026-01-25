@@ -21,6 +21,7 @@ public:
     HVACZone(HVACZoneConfig config);
     char* DoLoop();
     void fallbackToDefaultBehavior();
+    int lcdOffset() { return zoneConfig.lcdOffset; }
 };
 
  

@@ -18,8 +18,8 @@ unsigned long temperatureReadTimer = 0;
 
 
 #ifndef CONSTANTS
-  const int UNDERBELLY_TEMP_THRESHOLD_F = 40;
-  const int TEMPERATURE_READ_INTERVAL_MS = 5000;
+  const int UNDERBELLY_TEMP_THRESHOLD_F = 40; // Degrees Fahrenheit
+  const int TEMPERATURE_READ_INTERVAL_MS = 30000;
   const int INVALID_TEMP_THRESHOLD = -100;
   
   // Must be > 750 ms for Dallas Temp sensors to work properly
@@ -106,12 +106,11 @@ void loop() {
   #endif
 
   char* zone1Result = Zone1.DoLoop();
-  writeLCD(SECOND_LINE, Zone1.zoneConfig.lcdOffset, zone1Result);
+  if (zone1Result != nullptr)  writeLCD(SECOND_LINE, Zone1.lcdOffset(), zone1Result);
   char* zone2Result = Zone2.DoLoop();
-  writeLCD(SECOND_LINE, Zone2.zoneConfig.lcdOffset, zone2Result);
+  if (zone2Result != nullptr)  writeLCD(SECOND_LINE, Zone2.lcdOffset(), zone2Result);
   char* zone3Result = Zone3.DoLoop();
-  writeLCD(SECOND_LINE, Zone3.zoneConfig.lcdOffset, zone3Result);
-
+  if (zone3Result != nullptr)  writeLCD(SECOND_LINE, Zone3.lcdOffset(), zone3Result);
 }
 
 

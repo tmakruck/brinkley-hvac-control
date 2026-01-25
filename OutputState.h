@@ -197,9 +197,9 @@ struct OutputState {
         return result;
         
     }
-   
-    String getLowBitString(uint8_t bits){       
-        char lowBitChar = getLowBitCharacter(bits);
+
+    String getLowBitString(){       
+        char lowBitChar = getLowBitCharacter();
         String result ="";
         result += lowBitChar;
         result += " - ";
