@@ -9,6 +9,12 @@ Thermometer::Thermometer(const char* name, DeviceAddress address) : name(name)
     this->lastTemperature = 150;
 }
 
+bool Thermometer::getCallState(int setPointF, int temperatureSwing) {
+    bool hysteresisMode = this->getHysteresisMode(setPointF, temperatureSwing); // Update hysteresis mode first
+    // Call is active when in LOW hysteresis mode
+    return hysteresisMode == LOW;
+}
+
 bool Thermometer::getHysteresisMode(int setPointF, int temperatureSwing) {
     int currentTemp = this->retrieveTemperature();
     if (this->hysteresisMode == LOW) {

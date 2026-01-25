@@ -8,13 +8,13 @@
 
 class HVACZone {
     HVACZoneConfig zoneConfig;
-    SignalState previousInputState;
+    SignalState previousSignalState;
     OutputState lastOutputState;
     SignalState readSignalState();
     OutputState readOutputState();
     void updateOutputStates(OutputState newState);
     OutputState validateNewState(OutputState newCalculatedState);
-    String printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState);
+    String printPinStates(SignalState currentSignalState, OutputState calculatedState, OutputState actualState);
     OutputState CalculateNewOutputState(SignalState currentSignalState);
 public:
     HVACZone(){};

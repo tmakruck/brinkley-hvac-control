@@ -11,5 +11,5 @@ const StateType BlockSignal = {"BlockSignal", HIGH};
 const StateType Supply12V = {"Supply12V", HIGH};
 
 // SSR is not inverted logic so they get their own set
-const StateType SSROn = {"SSROn", HIGH};
+const StateType SpaceHeaterOn = {"SpaceHeaterOn", HIGH};
 const StateType SSROff = {"SSROff", LOW};

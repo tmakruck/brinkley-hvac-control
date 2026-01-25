@@ -5,7 +5,7 @@ struct SignalState {
     // Bit positions (MSB → LSB)
     enum Bit {
         UNUSED      = 7,
-        UNDERBELLY  = 6,
+        UBELLYCALL  = 6,
         FURNACE     = 5,
         HYSTERESIS  = 4,
         FAN_LO      = 3,
@@ -21,7 +21,7 @@ struct SignalState {
     {
         bits =
             (unused     << UNUSED)     |
-            (underbelly << UNDERBELLY) |
+            (underbelly << UBELLYCALL) |
             (furnace    << FURNACE)    |
             (hysteresis << HYSTERESIS) |
             (fanLo      << FAN_LO)     |
@@ -40,8 +40,8 @@ struct SignalState {
 
         result += "[";
         // Group A (left)
-        result += get(UNUSED)==LOW      ? "Unused+ "     : "Unused- ";
-        result += get(UNDERBELLY)==LOW  ? "UBellyCold "  : "UBellyWarm ";
+        result += get(UNUSED)==LOW      ? ""     : "";
+        result += get(UBELLYCALL)==HIGH  ? "UBellyCall+ "  : "UBellyCall- ";
         result += get(FURNACE)==HIGH    ? "Furn+ "       : "Furn- ";
         result += "][";
         // Group B (right)
@@ -104,7 +104,7 @@ struct SignalState {
         // 3-bit high group
         uint8_t highBits =
             ((b >> UNUSED)     & 1) << 2 |
-            ((b >> UNDERBELLY) & 1) << 1 |
+            ((b >> UBELLYCALL) & 1) << 1 |
             ((b >> FURNACE)    & 1);
         switch (highBits) {
             case 0b000: return '-';

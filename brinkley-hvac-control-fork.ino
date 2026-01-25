@@ -116,7 +116,7 @@ void loop() {
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   log_debug("------------------------------------------------------------------------------------------");
   lcd.begin(16, 2);
   writeLCD(FIRST_LINE, "Initializing");

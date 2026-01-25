@@ -16,6 +16,6 @@ extern const StateType BlockSignal;
 extern const StateType Supply12V;
 
 // SSR is not inverted logic so they get their own set
-extern const StateType SSROn;
+extern const StateType SpaceHeaterOn;
 extern const StateType SSROff;
 

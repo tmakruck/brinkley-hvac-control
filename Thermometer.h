@@ -15,6 +15,7 @@ public:
     Thermometer(const char* name, DeviceAddress address);
 
     bool getHysteresisMode(int setPointF, int temperatureSwing = 1);
+    bool getCallState(int setPointF, int temperatureSwing = 1);
     int retrieveTemperature();
     void setSensor(DallasTemperature &sensors);
     void printAddress();

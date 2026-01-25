@@ -57,7 +57,7 @@ struct OutputState {
         result += (get(FURNACE)==Passthrough.Value         ? "Furn:P " : "Furn:Alt ");
          result += "][";
         // Group B (right)
-        result += (get(SSR)==SSROn.Value                   ? "SSR:On " : "SSR:Off ");  // SSR is direct logic
+        result += (get(SSR)==SpaceHeaterOn.Value                   ? "SSR:On " : "SSR:Off ");  // SSR is direct logic
         result += (get(FAN_LO)==Passthrough.Value          ? "FanLo:P " : "FanLo:Alt ");
         result += (get(FAN_HI)==Passthrough.Value          ? "FanHi:P " : "FanHi:Alt/12V ");
         result += (get(AC)==Passthrough.Value              ? "AC:P " : "AC:Alt ");

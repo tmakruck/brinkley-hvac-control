@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "HvacZone.h"
 #include "Thermometer.h"
 #include "HVACZoneConfig.h"
@@ -15,15 +16,15 @@ HVACZone::HVACZone(HVACZoneConfig config) : zoneConfig(config)
 {
     log_info("Initializing HVACZone for %s", config.roomName);
     // Initialize all Heat Pump outputs HIGH (relays de‑energized → NC pass‑through)
-    this->zoneConfig.pinFanLoOut.set(Passthrough);
-    this->zoneConfig.pinFanHiOut.set(Passthrough);
-    this->zoneConfig.pinACOut.set(Passthrough);
-    this->zoneConfig.pinHPOut.set(Passthrough);
+    this->zoneConfig.pinFanLoRelay.set(Passthrough);
+    this->zoneConfig.pinFanHiRelay.set(Passthrough);
+    this->zoneConfig.pinACRelay.set(Passthrough);
+    this->zoneConfig.pinHPRelay.set(Passthrough);
     // And turn off the SSR
 
-    this->zoneConfig.pinSSR.set(SSROff);
+    this->zoneConfig.pinSpaceHeaterRelay.set(SSROff);
 
-    this->previousInputState = SignalState();
+    this->previousSignalState = SignalState();
 }
 
 SignalState HVACZone::readSignalState()
@@ -35,7 +36,7 @@ SignalState HVACZone::readSignalState()
         zoneConfig.pinHPSense.read(),
         OutsideThermometer.getHysteresisMode(zoneConfig.hysteresisSetPoint_F),
         zoneConfig.hasFurnace ? zoneConfig.pinFurnaceSense.read() : false,
-        zoneConfig.hasFurnace ? UnderbellyThermometer.getHysteresisMode(zoneConfig.underbellyThreshold) : false);
+        zoneConfig.hasFurnace ? UnderbellyThermometer.getCallState(zoneConfig.underbellyThreshold) : false);
 
     log_debug(currentSignalState.consoleData());
     return currentSignalState;
@@ -44,14 +45,14 @@ SignalState HVACZone::readSignalState()
 OutputState HVACZone::readOutputState()
 {
     OutputState currentOutputState = OutputState(
-        zoneConfig.pinFanLoOut.read(),
-        zoneConfig.pinFanHiOut.read(),
-        zoneConfig.pinACOut.read(),
-        zoneConfig.pinHPOut.read(),
-        zoneConfig.pinSSR.read(),
-        zoneConfig.hasFurnace ? zoneConfig.pinFurnaceOut.read() : false,
-        zoneConfig.hasFurnace ? zoneConfig.pinFurnacePower.read() : false,
-        zoneConfig.hasFurnace ? zoneConfig.pinHPPower.read() : false);
+        zoneConfig.pinFanLoRelay.read(),
+        zoneConfig.pinFanHiRelay.read(),
+        zoneConfig.pinACRelay.read(),
+        zoneConfig.pinHPRelay.read(),
+        zoneConfig.pinSpaceHeaterRelay.read(),
+        zoneConfig.hasFurnace ? zoneConfig.pinFurnaceRelay.read() : false,
+        zoneConfig.hasFurnace ? zoneConfig.pinFurnacePowerRelay.read() : false,
+        zoneConfig.hasFurnace ? zoneConfig.pinHPPowerRelay.read() : false);
     log_debug(currentOutputState.consoleData());
     return currentOutputState;
 }
@@ -69,17 +70,17 @@ OutputState HVACZone::validateNewState(OutputState expectedNewState)
 
 String HVACZone::DoLoop()
 {
-    SignalState currentInputState = this->readSignalState();
+    SignalState currentSignalState = this->readSignalState();
 
-    if (currentInputState.bits != this->previousInputState.bits)
+    if (currentSignalState.bits != this->previousSignalState.bits)
     {
-        log_info("Zone %s signal state changed: 0x%02X -> 0x%02X", zoneConfig.roomName, previousInputState.bits, currentInputState.bits);
+        log_info("Zone %s signal state changed: 0x%02X -> 0x%02X", zoneConfig.roomName, previousSignalState.bits, currentSignalState.bits);
         // Handle state change logic here
-        OutputState newCalculatedState = this->CalculateNewOutputState(currentInputState);
+        OutputState newCalculatedState = this->CalculateNewOutputState(currentSignalState);
         this->updateOutputStates(newCalculatedState);
         OutputState actualNewState = this->validateNewState(newCalculatedState);
-        this->previousInputState = currentInputState;
-        String printableString = this->printPinStates(currentInputState, newCalculatedState, actualNewState);
+        this->previousSignalState = currentSignalState;
+        String printableString = this->printPinStates(currentSignalState, newCalculatedState, actualNewState);
         return printableString;
     }
     else{
@@ -87,9 +88,9 @@ String HVACZone::DoLoop()
     }
 }
 
-String HVACZone::printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState)
+String HVACZone::printPinStates(SignalState currentSignalState, OutputState calculatedState, OutputState actualState)
 {
-    log_info("Current Input State   = %s", currentInputState.consoleData());
+    log_info("Current Signal State   = %s", currentSignalState.consoleData());
     log_info("Expected Output State = %s", calculatedState.consoleData());
     log_info("Actual Output State   = %s", actualState.consoleData());
 
@@ -97,32 +98,32 @@ String HVACZone::printPinStates(SignalState currentInputState, OutputState calcu
     int position = this->zoneConfig.lcdOffset;
 
     int bufferSize = 16;
-    String inputStateStr = "";
+    String signalStateStr = "";
     if (this->zoneConfig.hasFurnace)
     {
-        inputStateStr += currentInputState.getHighBitCharacter();
+        signalStateStr += currentSignalState.getHighBitCharacter();
     }
-    inputStateStr += currentInputState.getLowBitCharacter();
-    inputStateStr += ":";
-    inputStateStr += actualState.encode();
-    inputStateStr += '\0';
+    signalStateStr += currentSignalState.getLowBitCharacter();
+    signalStateStr += ":";
+    signalStateStr += actualState.encode();
+    signalStateStr += '\0';
 
-    log_debug("Zone %s LCD Output: %s", this->zoneConfig.roomName, inputStateStr.c_str());
-    return inputStateStr;
+    log_debug("Zone %s LCD Output: %s", this->zoneConfig.roomName, signalStateStr.c_str());
+    return signalStateStr;
 }
 
 void HVACZone::updateOutputStates(OutputState newState)
 {
-    this->zoneConfig.pinFanLoOut.set(newState.get(OutputState::Bit::FAN_LO));
-    this->zoneConfig.pinFanHiOut.set(newState.get(OutputState::Bit::FAN_HI));
-    this->zoneConfig.pinACOut.set(newState.get(OutputState::Bit::AC));
-    this->zoneConfig.pinHPOut.set(newState.get(OutputState::Bit::HEAT_PUMP));
-    this->zoneConfig.pinSSR.set(newState.get(OutputState::Bit::SSR));
+    this->zoneConfig.pinFanLoRelay.set(newState.get(OutputState::Bit::FAN_LO));
+    this->zoneConfig.pinFanHiRelay.set(newState.get(OutputState::Bit::FAN_HI));
+    this->zoneConfig.pinACRelay.set(newState.get(OutputState::Bit::AC));
+    this->zoneConfig.pinHPRelay.set(newState.get(OutputState::Bit::HEAT_PUMP));
+    this->zoneConfig.pinSpaceHeaterRelay.set(newState.get(OutputState::Bit::SSR));
     if (this->zoneConfig.hasFurnace)
     {
-        this->zoneConfig.pinFurnaceOut.set(newState.get(OutputState::Bit::FURNACE));
-        this->zoneConfig.pinFurnacePower.set(newState.get(OutputState::Bit::FURNACE_POWER));
-        this->zoneConfig.pinHPPower.set(newState.get(OutputState::Bit::HEAT_PUMP_POWER));
+        this->zoneConfig.pinFurnaceRelay.set(newState.get(OutputState::Bit::FURNACE));
+        this->zoneConfig.pinFurnacePowerRelay.set(newState.get(OutputState::Bit::FURNACE_POWER));
+        this->zoneConfig.pinHPPowerRelay.set(newState.get(OutputState::Bit::HEAT_PUMP_POWER));
     }
 }
 
@@ -146,25 +147,25 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
 {
     bool hasFurnace = this->zoneConfig.hasFurnace;
     bool isFurnaceCall = currentSignalState.get(SignalState::Bit::FURNACE);
+    bool isHeatPumpCall = currentSignalState.get(SignalState::Bit::HEAT_PUMP);
+    
     bool furnaceCallActive = hasFurnace && isFurnaceCall;
 
-    bool isHeatPumpCall = currentSignalState.get(SignalState::Bit::HEAT_PUMP);
     bool heatPumpCallActive = isHeatPumpCall;
 
-    bool underbellyTooCold = currentSignalState.get(SignalState::Bit::UNDERBELLY)==LOW;
-    bool hasCallForHeat = (furnaceCallActive || heatPumpCallActive);
-    bool isHysteresisLowMode = currentSignalState.get(SignalState::Bit::HYSTERESIS) == LOW;
+    bool isUnderbellyCall = currentSignalState.get(SignalState::Bit::UBELLYCALL);
+    bool hasCallForHeat = (furnaceCallActive || isHeatPumpCall);
 
     StateType newFanLoRelayState = Passthrough;
     StateType newFanHiRelayState = Passthrough;
     StateType newACRelayState = Passthrough;
     StateType newHeatPumpRelayState = Passthrough;
-    StateType newSSRState = SSROff;
+    StateType newSpaceHeaterState = SSROff;
     StateType newFurnaceRelayState = Passthrough;
     StateType newFurnacePowerRelayState = NoSupply12V;
     StateType newHeatPumpPowerRelayState = NoSupply12V;
 
-    if (isHysteresisLowMode)
+    if (currentSignalState.get(SignalState::Bit::HYSTERESIS) == LOW)
     {
         // the temps are cold enough to use the space heaters
         // don't pass the heat pump through
@@ -176,7 +177,7 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
         if (hasCallForHeat)
         {
             // turn on the ssr for the zone
-            newSSRState = SSROn;
+            newSpaceHeaterState = SpaceHeaterOn;
             if (hasFurnace)
             {
                 newFurnaceRelayState = Passthrough;
@@ -186,12 +187,12 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
         else
         {
 
-            if (hasFurnace && underbellyTooCold)
+            if (hasFurnace && isUnderbellyCall)
             {
                 newFurnaceRelayState = Supply12V;
                 newFurnacePowerRelayState = Supply12V;
             }
-            newSSRState = SSROff;
+            newSpaceHeaterState = SSROff;
         }
     }
 
@@ -200,7 +201,7 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
         // never run space heater above threshold
         // never run furnace above threshold
         // always pass heat pump through
-        newSSRState = SSROff;
+        newSpaceHeaterState = SSROff;
 
         if (furnaceCallActive)
         {
@@ -210,7 +211,7 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
             newHeatPumpRelayState = Supply12V;
             newACRelayState = Passthrough;
 
-            if (underbellyTooCold)
+            if (isUnderbellyCall)
             {
                 newFurnacePowerRelayState = Supply12V;
                 newFurnaceRelayState = Supply12V;
@@ -231,7 +232,7 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
             if (hasFurnace)
             {
                 newHeatPumpPowerRelayState = NoSupply12V;
-                if (underbellyTooCold && !isFurnaceCall)
+                if (isUnderbellyCall && !isFurnaceCall)
                 {
                     newFurnaceRelayState = Supply12V;
                     newFurnacePowerRelayState = Supply12V;
@@ -245,7 +246,7 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
         }
     }
 
-    OutputState newOutputState = OutputState(newFanLoRelayState, newFanHiRelayState, newACRelayState, newHeatPumpRelayState, newSSRState,
+    OutputState newOutputState = OutputState(newFanLoRelayState, newFanHiRelayState, newACRelayState, newHeatPumpRelayState, newSpaceHeaterState,
                                              newFurnaceRelayState, newFurnacePowerRelayState, newHeatPumpPowerRelayState);
     return newOutputState;
 }
