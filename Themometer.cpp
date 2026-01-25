@@ -13,12 +13,12 @@ bool Thermometer::getHysteresisMode(int setPointF, int temperatureSwing) {
     int currentTemp = this->retrieveTemperature();
     if (this->hysteresisMode == LOW) {
         // Currently in spaceHeater/Furnace mode - need temp to rise above UPPER threshold to switch
-        if (currentTemp >= setPointF+temperatureSwing) {
-            log_info("%s Temperature rising above %dF", this->name, setPointF+temperatureSwing);
+        if (currentTemp >= setPointF) {
+            log_info("%s Temperature rising above %dF", this->name, setPointF);
             this->hysteresisMode = HIGH;
         }
         else {
-            log_debug("%s Temperature remains below %dF", this->name, setPointF+temperatureSwing);
+            log_debug("%s Temperature remains below %dF", this->name, setPointF);
         }
     } else {
         // Currently in heat pump mode - need temp to drop below LOWER threshold to switch
@@ -53,7 +53,7 @@ int Thermometer::retrieveTemperature() {
         // Check if reading was successful
         if (temperature != DEVICE_DISCONNECTED_F)
         {
-            log_debug("Temperature for %s is %d", this->name, tempInt);
+            log_info("Temperature for %s is %d", this->name, tempInt);
         }
         else
         {

@@ -14,12 +14,12 @@ class HVACZone {
     OutputState readOutputState();
     void updateOutputStates(OutputState newState);
     OutputState validateNewState(OutputState newCalculatedState);
-    char* printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState);
+    String printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState);
     OutputState CalculateNewOutputState(SignalState currentSignalState);
 public:
     HVACZone(){};
     HVACZone(HVACZoneConfig config);
-    char* DoLoop();
+    String DoLoop();
     void fallbackToDefaultBehavior();
     int lcdOffset() { return zoneConfig.lcdOffset; }
 };

@@ -105,12 +105,12 @@ void loop() {
     handleButtonPress();
   #endif
 
-  char* zone1Result = Zone1.DoLoop();
-  if (zone1Result != nullptr)  writeLCD(SECOND_LINE, Zone1.lcdOffset(), zone1Result);
-  char* zone2Result = Zone2.DoLoop();
-  if (zone2Result != nullptr)  writeLCD(SECOND_LINE, Zone2.lcdOffset(), zone2Result);
-  char* zone3Result = Zone3.DoLoop();
-  if (zone3Result != nullptr)  writeLCD(SECOND_LINE, Zone3.lcdOffset(), zone3Result);
+  String zone1Result = Zone1.DoLoop();
+  if (zone1Result != "") writeLCD(SECOND_LINE, Zone1.lcdOffset(), zone1Result.c_str());
+  String zone2Result = Zone2.DoLoop();
+  if (zone2Result != "")  writeLCD(SECOND_LINE, Zone2.lcdOffset(), zone2Result.c_str());
+  String zone3Result = Zone3.DoLoop();
+  if (zone3Result != "")  writeLCD(SECOND_LINE, Zone3.lcdOffset(), zone3Result.c_str());
 }
 
 

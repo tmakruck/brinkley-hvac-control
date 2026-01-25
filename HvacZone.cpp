@@ -67,7 +67,7 @@ OutputState HVACZone::validateNewState(OutputState expectedNewState)
     return actualNewState;
 }
 
-char* HVACZone::DoLoop()
+String HVACZone::DoLoop()
 {
     SignalState currentInputState = this->readSignalState();
 
@@ -79,12 +79,15 @@ char* HVACZone::DoLoop()
         this->updateOutputStates(newCalculatedState);
         OutputState actualNewState = this->validateNewState(newCalculatedState);
         this->previousInputState = currentInputState;
-        return this->printPinStates(currentInputState, newCalculatedState, actualNewState);
+        String printableString = this->printPinStates(currentInputState, newCalculatedState, actualNewState);
+        return printableString;
     }
-    return nullptr;
+    else{
+        return "";
+    }
 }
 
-char* HVACZone::printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState)
+String HVACZone::printPinStates(SignalState currentInputState, OutputState calculatedState, OutputState actualState)
 {
     log_info("Current Input State   = %s", currentInputState.consoleData());
     log_info("Expected Output State = %s", calculatedState.consoleData());
@@ -104,10 +107,8 @@ char* HVACZone::printPinStates(SignalState currentInputState, OutputState calcul
     inputStateStr += actualState.encode();
     inputStateStr += '\0';
 
-    char buffer[bufferSize];
-    snprintf(buffer, sizeof(buffer), inputStateStr.c_str());
-    log_info("Zone %s LCD Output: %s", this->zoneConfig.roomName, buffer);
-    return buffer;
+    log_debug("Zone %s LCD Output: %s", this->zoneConfig.roomName, inputStateStr.c_str());
+    return inputStateStr;
 }
 
 void HVACZone::updateOutputStates(OutputState newState)
