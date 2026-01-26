@@ -6,7 +6,7 @@ Thermometer::Thermometer(const char* name, DeviceAddress address) : name(name)
 {
     log_info("Initializing Thermometer %s", name);
     memcpy(this->address, address, sizeof(DeviceAddress));
-    this->lastTemperature = 150;
+    this->lastTemperature = INITIAL_TEMPERATURE;
 }
 
 bool Thermometer::getCallState(int setPointF, int temperatureSwing) {
@@ -16,24 +16,25 @@ bool Thermometer::getCallState(int setPointF, int temperatureSwing) {
 }
 
 bool Thermometer::getHysteresisMode(int setPointF, int temperatureSwing) {
+    int lastTemp = this->lastTemperature;
     int currentTemp = this->retrieveTemperature();
     if (this->hysteresisMode == LOW) {
-        // Currently in spaceHeater/Furnace mode - need temp to rise above UPPER threshold to switch
-        if (currentTemp >= setPointF) {
-            log_info("%s Temperature rising above %dF", this->name, setPointF);
+        // Currently in It's Too Cold mode - need temp to rise above UPPER threshold to switch
+        if (currentTemp >= setPointF || lastTemp == INITIAL_TEMPERATURE) {
+            log_info("%s temperature is now above %dF", this->name, setPointF);
             this->hysteresisMode = HIGH;
         }
         else {
-            log_debug("%s Temperature remains below %dF", this->name, setPointF);
+            log_debug("%s temperature remains below %dF", this->name, setPointF);
         }
     } else {
-        // Currently in heat pump mode - need temp to drop below LOWER threshold to switch
-        if (currentTemp < setPointF-temperatureSwing) {
-            log_info("%s Temperature dropped below %dF", this->name, setPointF-temperatureSwing);
+        // Currently in It's Warm  Enough mode - need temp to drop below LOWER threshold to switch
+        if (currentTemp < setPointF-temperatureSwing || lastTemp == INITIAL_TEMPERATURE) {
+            log_info("%s temperature is now below %dF", this->name, setPointF-temperatureSwing);
             this->hysteresisMode = LOW;
         }
         else {
-            log_debug("%s Temperature remains above %dF", this->name, setPointF-temperatureSwing);
+            log_debug("%s temperature remains above %dF", this->name, setPointF-temperatureSwing);
         }
     }
 
@@ -59,7 +60,7 @@ int Thermometer::retrieveTemperature() {
         // Check if reading was successful
         if (temperature != DEVICE_DISCONNECTED_F)
         {
-            log_info("Temperature for %s is %d", this->name, tempInt);
+            log_debug("Temperature for %s is %d", this->name, tempInt);
         }
         else
         {

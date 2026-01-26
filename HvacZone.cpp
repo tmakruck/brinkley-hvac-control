@@ -14,7 +14,7 @@ int zoneID = 0;
 
 HVACZone::HVACZone(HVACZoneConfig config) : zoneConfig(config)
 {
-    log_info("Initializing HVACZone for %s", config.roomName);
+    log_debug("Initializing HVACZone for %s", config.roomName);
     // Initialize all Heat Pump outputs HIGH (relays de‑energized → NC pass‑through)
     this->zoneConfig.pinFanLoRelay.set(Passthrough);
     this->zoneConfig.pinFanHiRelay.set(Passthrough);
@@ -38,7 +38,7 @@ SignalState HVACZone::readSignalState()
         zoneConfig.hasFurnace ? zoneConfig.pinFurnaceSense.read() : false,
         zoneConfig.hasFurnace ? UnderbellyThermometer.getCallState(zoneConfig.underbellyThreshold) : false);
 
-    log_debug(currentSignalState.consoleData());
+    log_debug(currentSignalState.consoleData(zoneConfig.hasFurnace));
     return currentSignalState;
 }
 
@@ -53,7 +53,7 @@ OutputState HVACZone::readOutputState()
         zoneConfig.hasFurnace ? zoneConfig.pinFurnaceRelay.read() : false,
         zoneConfig.hasFurnace ? zoneConfig.pinFurnacePowerRelay.read() : false,
         zoneConfig.hasFurnace ? zoneConfig.pinHPPowerRelay.read() : false);
-    log_debug(currentOutputState.consoleData());
+    log_debug(currentOutputState.consoleData(zoneConfig.hasFurnace));
     return currentOutputState;
 }
 
@@ -90,22 +90,18 @@ String HVACZone::DoLoop()
 
 String HVACZone::printPinStates(SignalState currentSignalState, OutputState calculatedState, OutputState actualState)
 {
-    log_info("Current Signal State   = %s", currentSignalState.consoleData());
-    log_info("Expected Output State = %s", calculatedState.consoleData());
-    log_info("Actual Output State   = %s", actualState.consoleData());
+    log_info("Signal: %s", currentSignalState.consoleData(zoneConfig.hasFurnace));
+    log_debug("Expected Output = %s", calculatedState.consoleData(zoneConfig.hasFurnace));
+    log_info("Output: %s", actualState.consoleData(zoneConfig.hasFurnace));
 
     int lcdLine = 2;
     int position = this->zoneConfig.lcdOffset;
 
     int bufferSize = 16;
     String signalStateStr = "";
-    if (this->zoneConfig.hasFurnace)
-    {
-        signalStateStr += currentSignalState.getHighBitCharacter();
-    }
-    signalStateStr += currentSignalState.getLowBitCharacter();
+    signalStateStr += currentSignalState.encode(zoneConfig.hasFurnace);
     signalStateStr += ":";
-    signalStateStr += actualState.encode();
+    signalStateStr += actualState.encode(zoneConfig.hasFurnace);
     signalStateStr += '\0';
 
     log_debug("Zone %s LCD Output: %s", this->zoneConfig.roomName, signalStateStr.c_str());
