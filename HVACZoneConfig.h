@@ -34,7 +34,7 @@ public:
     HVACZoneConfig(const char *roomName, int lcdOffset, int startPin, int pinSpaceHeaterRelay, int hysteresisSetPoint_F, int furnaceSensePin = -1, int underbellyThreshold = 100)
         : roomName(roomName), lcdOffset(lcdOffset), startPin(startPin), hysteresisSetPoint_F(hysteresisSetPoint_F), hasFurnace(furnaceSensePin != -1), underbellyThreshold(underbellyThreshold)
     {
-        log_info("Creating %s HVACZoneConfig", roomName);
+        log_debug("Creating HVACZoneConfig for %s", roomName);
         this->pinFanLoSense = Pin(startPin, "Fan Lo Sense", INPUT_PULLUP);
         this->pinFanHiSense = Pin(startPin + 2, "Fan Hi Sense", INPUT_PULLUP);
         this->pinACSense = Pin(startPin + 4, "AC Sense", INPUT_PULLUP);

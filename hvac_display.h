@@ -176,12 +176,7 @@ void writeLCD(int line, int position, const char *input)
     lcd.setCursor(position, line);
     lcd.print(input);
 
-    Serial.print("LCD Line ");
-    Serial.print(line);
-    Serial.print(" Pos ");
-    Serial.print(position);
-    Serial.print(": ");
-    Serial.println(input);
+    log_debug("LCD Line %d Pos %d: %s", line, position, input);
 }
 
 void writeError(int line, uint8_t value)

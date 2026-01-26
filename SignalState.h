@@ -37,20 +37,23 @@ struct SignalState {
     }
 
     // Human-readable description
-    String BitByBit() {
+    String BitByBit(bool hasFurnace) {
         String result = "[";
 
-        // Group A
-        result += get(UBELLYCALL) ? "UBellyCall+ " : "UBellyCall- ";
-        result += get(FURNACE)    ? "Furn+ "       : "Furn- ";
-        result += "][";
+        if (hasFurnace) {
+            // Group A
+            result += get(UNUSED)     ? "       " : "       ";
+            result += get(UBELLYCALL) ? "UndB+ " : "UndB- ";
+            result += get(FURNACE)    ? "Furn+ "  : "Furn- ";
+            result += "][";
+        }
 
         // Group B
-        result += get(HYSTERESIS) ? "Hys+ "        : "Hys- ";
-        result += get(FAN_LO)     ? "FanLo+ "      : "FanLo- ";
-        result += get(FAN_HI)     ? "FanHi+ "      : "FanHi- ";
-        result += get(AC)         ? "AC+ "         : "AC- ";
-        result += get(HEAT_PUMP)  ? "HP+ "         : "HP- ";
+        result += get(HYSTERESIS) ? "Hys+ "  : "Hys- ";
+        result += get(FAN_LO)     ? "Lo+ "   : "Lo- ";
+        result += get(FAN_HI)     ? "Hi+ "   : "Hi- ";
+        result += get(AC)         ? "AC+ "   : "AC- ";
+        result += get(HEAT_PUMP)  ? "HP+ "   : "HP- ";
         result += "]";
 
         return result;
@@ -66,33 +69,43 @@ struct SignalState {
     }
 
     // Safe console output
-    const char* consoleData() {
+    const char* consoleData(bool hasFurnace) {
         static char buffer[256];
         snprintf(buffer, sizeof(buffer),
                  "0x%02X | %s | [%s] | '%s' | \"%s\"",
                  bits,
                  toBinary().c_str(),
-                 BitByBit().c_str(),
-                 encode().c_str(),
-                 Description().c_str());
+                 BitByBit(hasFurnace).c_str(),
+                 encode(hasFurnace).c_str(),
+                 Description(hasFurnace).c_str());
         return buffer;
     }
 
     // Encoding
-    String encode() {
-        char highChar = getHighBitCharacter();
+    String encode(bool hasFurnace) {
         char lowChar  = getLowBitCharacter();
 
-        char out[3];
-        out[0] = highChar;
-        out[1] = lowChar;
-        out[2] = '\0';
-
-        return String(out);
+        if(hasFurnace) {
+            char highChar = getHighBitCharacter();
+            char out[3];
+            out[0] = highChar;
+            out[1] = lowChar;
+            out[2] = '\0';
+            return String(out);
+        }
+        else {
+            char out[2];
+            out[0] = lowChar;
+            out[1] = '\0';
+            return String(out);
+        }
     }
 
-    String Description() {
-        return getHighBitString() + "/" + getLowBitString();
+    String Description(bool hasFurnace) {
+        if (hasFurnace)
+            return getHighBitString() + "/" + getLowBitString();
+        else  
+            return getLowBitString();
     }
 
     // 3-bit high table (8 entries)
