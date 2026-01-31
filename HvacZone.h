@@ -5,6 +5,7 @@
 #include "HVACZoneConfig.h"
 #include "SignalState.h"
 #include "OutputState.h"
+#include "Thermometer.h"
 struct ZoneOutputs {
     StateType fanLo = Passthrough;
     StateType fanHi = Passthrough;
@@ -21,6 +22,8 @@ class HVACZone {
     HVACZoneConfig zoneConfig;
     SignalState previousSignalState;
     OutputState lastOutputState;
+    int lastTemperature = Thermometer::INITIAL_TEMPERATURE;
+    bool hysteresisMode = HIGH;
     SignalState readSignalState();
     OutputState readOutputState();
     void updateOutputStates(OutputState newState);
@@ -29,6 +32,9 @@ class HVACZone {
     OutputState CalculateNewOutputState(SignalState currentSignalState);
     void applyHysteresisLowRules(const SignalState& s, ZoneOutputs& o, bool hasFurnace);
     void applyNormalModeRules(const SignalState& s, ZoneOutputs& o, bool hasFurnace);
+    bool getHysteresisMode(Thermometer whichThermometer, int setPointF, int temperatureSwing = 1);
+    bool getCallState(Thermometer whichThermometer, int setPointF, int temperatureSwing = 1);
+    
 public:
     HVACZone(){};
     HVACZone(HVACZoneConfig config);

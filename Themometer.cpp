@@ -9,38 +9,6 @@ Thermometer::Thermometer(const char* name, DeviceAddress address) : name(name)
     this->lastTemperature = INITIAL_TEMPERATURE;
 }
 
-bool Thermometer::getCallState(int setPointF, int temperatureSwing) {
-    bool hysteresisMode = this->getHysteresisMode(setPointF, temperatureSwing); // Update hysteresis mode first
-    // Call is active when in LOW hysteresis mode
-    return hysteresisMode == LOW;
-}
-
-bool Thermometer::getHysteresisMode(int setPointF, int temperatureSwing) {
-    int lastTemp = this->lastTemperature;
-    int currentTemp = this->retrieveTemperature();
-    if (this->hysteresisMode == LOW) {
-        // Currently in It's Too Cold mode - need temp to rise above UPPER threshold to switch
-        if (currentTemp >= setPointF || lastTemp == INITIAL_TEMPERATURE) {
-            log_info("%s temperature is now above %dF", this->name, setPointF);
-            this->hysteresisMode = HIGH;
-        }
-        else {
-            log_debug("%s temperature remains below %dF", this->name, setPointF);
-        }
-    } else {
-        // Currently in It's Warm  Enough mode - need temp to drop below LOWER threshold to switch
-        if (currentTemp < setPointF-temperatureSwing || lastTemp == INITIAL_TEMPERATURE) {
-            log_info("%s temperature is now below %dF", this->name, setPointF-temperatureSwing);
-            this->hysteresisMode = LOW;
-        }
-        else {
-            log_debug("%s temperature remains above %dF", this->name, setPointF-temperatureSwing);
-        }
-    }
-
-    return this->hysteresisMode;  
-}
-
 int Thermometer::retrieveTemperature() {
     // call sensors.requestTemperatures() to issue a global temperature
     // request to all devices on the bus

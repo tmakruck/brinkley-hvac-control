@@ -27,6 +27,38 @@ HVACZone::HVACZone(HVACZoneConfig config) : zoneConfig(config)
     this->previousSignalState = SignalState();
 }
 
+bool HVACZone::getHysteresisMode(Thermometer whichThermometer, int setPointF, int temperatureSwing) {
+    int lastTemp = this->lastTemperature;
+    int currentTemp = whichThermometer.retrieveTemperature();
+    if (this->hysteresisMode == LOW) {
+        // Currently in It's Too Cold mode - need temp to rise above UPPER threshold to switch
+        if (currentTemp >= setPointF || lastTemp == Thermometer::INITIAL_TEMPERATURE) {
+            log_info("%s (%s) temperature is now above %dF", this->zoneConfig.roomName, whichThermometer.name, setPointF);
+            this->hysteresisMode = HIGH;
+        }
+        else {
+            log_debug("%s (%s) temperature remains below %dF", this->zoneConfig.roomName, whichThermometer.name, setPointF);
+        }
+    } else {
+        // Currently in It's Warm  Enough mode - need temp to drop below LOWER threshold to switch
+        if (currentTemp < setPointF-temperatureSwing || lastTemp == Thermometer::INITIAL_TEMPERATURE) {
+            log_info("%s (%s) temperature is now below %dF", this->zoneConfig.roomName, whichThermometer.name, setPointF-temperatureSwing);
+            this->hysteresisMode = LOW;
+        }
+        else {
+            log_debug("%s (%s) temperature remains above %dF", this->zoneConfig.roomName, whichThermometer.name, setPointF-temperatureSwing);
+        }
+    }
+    this->lastTemperature = currentTemp;
+    return this->hysteresisMode;  
+}
+
+bool HVACZone::getCallState(Thermometer whichThermometer, int setPointF, int temperatureSwing) {
+    bool hysteresisMode = this->getHysteresisMode(whichThermometer, setPointF, temperatureSwing); // Update hysteresis mode first
+    // Call is active when in LOW hysteresis mode
+    return hysteresisMode == LOW;
+}
+
 SignalState HVACZone::readSignalState()
 {
     SignalState currentSignalState = SignalState(
@@ -34,9 +66,9 @@ SignalState HVACZone::readSignalState()
         zoneConfig.pinFanHiSense.read(),
         zoneConfig.pinACSense.read(),
         zoneConfig.pinHPSense.read(),
-        OutsideThermometer.getHysteresisMode(zoneConfig.hysteresisSetPoint_F),
+        this->getHysteresisMode(OutsideThermometer, zoneConfig.hysteresisSetPoint_F),
         zoneConfig.hasFurnace ? zoneConfig.pinFurnaceSense.read() : false,
-        zoneConfig.hasFurnace ? UnderbellyThermometer.getCallState(zoneConfig.underbellyThreshold) : false);
+        zoneConfig.hasFurnace ? this->getCallState(UnderbellyThermometer, zoneConfig.underbellyThreshold) : false);
 
     log_debug(currentSignalState.consoleData(zoneConfig.hasFurnace));
     return currentSignalState;
