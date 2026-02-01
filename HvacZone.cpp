@@ -7,9 +7,6 @@
 #include "OutputState.h"
 #include "StateType.h"
 
-extern Thermometer OutsideThermometer;
-extern Thermometer UnderbellyThermometer;
-
 int zoneID = 0;
 
 HVACZone::HVACZone(HVACZoneConfig config) : zoneConfig(config)
@@ -27,33 +24,55 @@ HVACZone::HVACZone(HVACZoneConfig config) : zoneConfig(config)
     this->previousSignalState = SignalState();
 }
 
-bool HVACZone::getHysteresisMode(Thermometer whichThermometer, int setPointF, int temperatureSwing) {
-    int lastTemp = this->lastTemperature;
-    int currentTemp = whichThermometer.retrieveTemperature();
-    if (this->hysteresisMode == LOW) {
-        // Currently in It's Too Cold mode - need temp to rise above UPPER threshold to switch
-        if (currentTemp >= setPointF || lastTemp == Thermometer::INITIAL_TEMPERATURE) {
-            log_info("%s (%s) temperature is now above %dF", this->zoneConfig.roomName, whichThermometer.name, setPointF);
-            this->hysteresisMode = HIGH;
-        }
-        else {
-            log_debug("%s (%s) temperature remains below %dF", this->zoneConfig.roomName, whichThermometer.name, setPointF);
-        }
-    } else {
-        // Currently in It's Warm  Enough mode - need temp to drop below LOWER threshold to switch
-        if (currentTemp < setPointF-temperatureSwing || lastTemp == Thermometer::INITIAL_TEMPERATURE) {
-            log_info("%s (%s) temperature is now below %dF", this->zoneConfig.roomName, whichThermometer.name, setPointF-temperatureSwing);
-            this->hysteresisMode = LOW;
-        }
-        else {
-            log_debug("%s (%s) temperature remains above %dF", this->zoneConfig.roomName, whichThermometer.name, setPointF-temperatureSwing);
+bool HVACZone::getHysteresisMode(Thermometer& whichThermometer, int setPointF, int temperatureSwing)
+{
+    for (int i = 0; i < 2; i++)
+    {
+        if (this->lastTemperatures[i].whichThermometer == &whichThermometer)
+        {
+
+            int lastTemp = this->lastTemperatures[i].lastTemp;
+            int currentTemp = whichThermometer.retrieveTemperature();
+
+            if (this->lastTemperatures[i].hysteresisMode == LOW)
+            {
+                if (currentTemp >= setPointF || lastTemp == Thermometer::INITIAL_TEMPERATURE)
+                {
+                    log_info("%s (%s) temperature is now above %dF",
+                             this->zoneConfig.roomName, whichThermometer.name, setPointF);
+                    this->lastTemperatures[i].hysteresisMode = HIGH;
+                }
+                else
+                {
+                    log_debug("%s (%s) temperature remains below %dF",
+                              this->zoneConfig.roomName, whichThermometer.name, setPointF);
+                }
+            }
+            else
+            {
+                if (currentTemp < setPointF - temperatureSwing || lastTemp == Thermometer::INITIAL_TEMPERATURE)
+                {
+                    log_info("%s (%s) temperature is now below %dF",
+                             this->zoneConfig.roomName, whichThermometer.name, setPointF - temperatureSwing);
+                    this->lastTemperatures[i].hysteresisMode = LOW;
+                }
+                else
+                {
+                    log_debug("%s (%s) temperature remains above %dF",
+                              this->zoneConfig.roomName, whichThermometer.name, setPointF - temperatureSwing);
+                }
+            }
+
+            this->lastTemperatures[i].lastTemp = currentTemp;
+            return this->lastTemperatures[i].hysteresisMode;
         }
     }
-    this->lastTemperature = currentTemp;
-    return this->hysteresisMode;  
+    log_info("Thermometer %s not found in HVACZone %s", whichThermometer.name, this->zoneConfig.roomName);
+    return HIGH; // Default to HIGH if thermometer not found
 }
 
-bool HVACZone::getCallState(Thermometer whichThermometer, int setPointF, int temperatureSwing) {
+bool HVACZone::getCallState(Thermometer& whichThermometer, int setPointF, int temperatureSwing)
+{
     bool hysteresisMode = this->getHysteresisMode(whichThermometer, setPointF, temperatureSwing); // Update hysteresis mode first
     // Call is active when in LOW hysteresis mode
     return hysteresisMode == LOW;
@@ -115,7 +134,8 @@ String HVACZone::DoLoop()
         String printableString = this->printPinStates(currentSignalState, newCalculatedState, actualNewState);
         return printableString;
     }
-    else{
+    else
+    {
         return "";
     }
 }
@@ -159,14 +179,14 @@ void HVACZone::fallbackToDefaultBehavior()
 {
     log_info("Falling back to default behavior for %s", this->zoneConfig.roomName);
     OutputState newOutputState = OutputState(
-        Passthrough, // fanLo
-        Passthrough, // fanHi
-        Passthrough, // ac
-        Passthrough, // heatPump
-        Passthrough, // furnace
-        NoSupply12V, // furnacePower
-        NoSupply12V, // heatPumpPower
-        SpaceHeaterOff       // SSR
+        Passthrough,   // fanLo
+        Passthrough,   // fanHi
+        Passthrough,   // ac
+        Passthrough,   // heatPump
+        Passthrough,   // furnace
+        NoSupply12V,   // furnacePower
+        NoSupply12V,   // heatPumpPower
+        SpaceHeaterOff // SSR
     );
     this->updateOutputStates(newOutputState);
 }
@@ -174,12 +194,15 @@ void HVACZone::fallbackToDefaultBehavior()
 OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
 {
     ZoneOutputs o;
-    bool hasFurnace    = this->zoneConfig.hasFurnace;
+    bool hasFurnace = this->zoneConfig.hasFurnace;
     bool hysteresisLow = (currentSignalState.get(SignalState::HYSTERESIS) == LOW);
 
-    if (hysteresisLow) {
+    if (hysteresisLow)
+    {
         this->applyHysteresisLowRules(currentSignalState, o, hasFurnace);
-    } else {
+    }
+    else
+    {
         this->applyNormalModeRules(currentSignalState, o, hasFurnace);
     }
 
@@ -191,75 +214,91 @@ OutputState HVACZone::CalculateNewOutputState(SignalState currentSignalState)
         o.spaceHeater,
         o.furnace,
         o.furnacePower,
-        o.heatPumpPower
-    );
+        o.heatPumpPower);
 }
 
-void HVACZone::applyHysteresisLowRules(const SignalState& s, ZoneOutputs& o, bool hasFurnace) {
-    bool furnaceCall    = s.get(SignalState::FURNACE);
-    bool heatPumpCall   = s.get(SignalState::HEAT_PUMP);
+void HVACZone::applyHysteresisLowRules(const SignalState &s, ZoneOutputs &o, bool hasFurnace)
+{
+    bool furnaceCall = s.get(SignalState::FURNACE);
+    bool heatPumpCall = s.get(SignalState::HEAT_PUMP);
     bool underbellyCall = s.get(SignalState::UBELLYCALL);
 
     // Block all HVAC signals
-    o.fanLo   = BlockSignal;
-    o.fanHi   = BlockSignal;
-    o.ac      = BlockSignal;
+    o.fanLo = BlockSignal;
+    o.fanHi = BlockSignal;
+    o.ac = BlockSignal;
     o.heatPump = BlockSignal;
 
     bool hasCallForHeat = (furnaceCall || heatPumpCall);
 
-    if (hasCallForHeat) {
+    if (hasCallForHeat)
+    {
         o.spaceHeater = SpaceHeaterOn;
-        if (hasFurnace) {
-            o.furnace      = Passthrough;
+        if (hasFurnace)
+        {
+            o.furnace = Passthrough;
             o.furnacePower = NoSupply12V;
         }
-    } else {
-        if (hasFurnace && underbellyCall) {
-            o.furnace      = Supply12V;
+    }
+    else
+    {
+        if (hasFurnace && underbellyCall)
+        {
+            o.furnace = Supply12V;
             o.furnacePower = Supply12V;
         }
         o.spaceHeater = SpaceHeaterOff;
     }
 }
 
-void HVACZone::applyNormalModeRules(const SignalState& s, ZoneOutputs& o, bool hasFurnace) {
-    bool furnaceCall    = s.get(SignalState::FURNACE);
+void HVACZone::applyNormalModeRules(const SignalState &s, ZoneOutputs &o, bool hasFurnace)
+{
+    bool furnaceCall = s.get(SignalState::FURNACE);
     bool underbellyCall = s.get(SignalState::UBELLYCALL);
 
     // Never run space heater above threshold
     o.spaceHeater = SpaceHeaterOff;
 
-    if (furnaceCall) {
+    if (furnaceCall)
+    {
         log_debug("Redirecting furnace call to heat pump");
 
         o.heatPumpPower = Supply12V;
-        o.fanHi         = Supply12V;
-        o.heatPump      = Supply12V;
-        o.ac            = Passthrough;
+        o.fanHi = Supply12V;
+        o.heatPump = Supply12V;
+        o.ac = Passthrough;
 
-        if (underbellyCall) {
-            o.furnace      = Supply12V;
+        if (underbellyCall)
+        {
+            o.furnace = Supply12V;
             o.furnacePower = Supply12V;
-        } else {
-            o.furnace      = NoSupply12V;
+        }
+        else
+        {
+            o.furnace = NoSupply12V;
             o.furnacePower = NoSupply12V;
         }
-    } else {
+    }
+    else
+    {
         // Pass everything through
-        o.fanLo   = Passthrough;
-        o.fanHi   = Passthrough;
-        o.ac      = Passthrough;
+        o.fanLo = Passthrough;
+        o.fanHi = Passthrough;
+        o.ac = Passthrough;
         o.heatPump = Passthrough;
 
-        if (hasFurnace) {
+        if (hasFurnace)
+        {
             o.heatPumpPower = NoSupply12V;
 
-            if (underbellyCall) {
-                o.furnace      = Supply12V;
+            if (underbellyCall)
+            {
+                o.furnace = Supply12V;
                 o.furnacePower = Supply12V;
-            } else {
-                o.furnace      = Passthrough;
+            }
+            else
+            {
+                o.furnace = Passthrough;
                 o.furnacePower = NoSupply12V;
             }
         }
