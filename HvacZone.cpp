@@ -275,7 +275,7 @@ void HVACZone::applyNormalModeRules(const SignalState &s, ZoneOutputs &o, bool h
         }
         else
         {
-            o.furnace = NoSupply12V;
+            o.furnace = BlockSignal;
             o.furnacePower = NoSupply12V;
         }
     }
