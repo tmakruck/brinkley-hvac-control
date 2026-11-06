@@ -7,6 +7,7 @@ class Thermometer
     DallasTemperature *sensors = nullptr; // DallasTemperature instance
     unsigned long lastReadTime = 0;
     int hysteresisMode = HIGH;
+    static const int TEMPERATURE_OFFSET = -3; // Offset to adjust the temperature reading
 public:
     static const int INITIAL_TEMPERATURE = 999; // An out-of-range initial temperature
     const char* name;

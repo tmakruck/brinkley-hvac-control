@@ -22,6 +22,7 @@ int Thermometer::retrieveTemperature() {
     
     float temperature = this->sensors->getTempF(this->address);
     int tempInt = static_cast<int>(round(temperature));
+    tempInt += TEMPERATURE_OFFSET; // Apply the offset to the temperature reading
     if (tempInt != this->lastTemperature) {
         this->lastTemperature = tempInt;
 
