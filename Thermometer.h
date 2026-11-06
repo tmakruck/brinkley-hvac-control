@@ -9,6 +9,7 @@ class Thermometer
     int lastTemperature;
     int hysteresisMode = HIGH;
     static const int INITIAL_TEMPERATURE = 999; // An out-of-range initial temperature
+    static const int TEMPERATURE_OFFSET = -3; // Offset to adjust the temperature reading
 public:
     const char* name;
     DeviceAddress address;
