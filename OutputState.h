@@ -134,6 +134,7 @@ struct OutputState {
             case 0b001: return 'F'; // Furnace Bypass
             case 0b011: return 'M'; // Manually Run Furnace (Force On) like for Underbelly
             case 0b100: return 'H'; // Heat Pump Power Alternate, expected only if LowBit is also alternate
+            case 0b101: return 'O'; // Heat Pump Power Alternate and Furnace Bypass
             case 0b111: return 'B'; // Heat Pump Power Alternate and Furnace Power Alternate (Probably High Hystersis but cold underbelly)
             
             //case 0b101: return 'N'; // Heat pump power alternate and no furnace - likely invalid
@@ -198,6 +199,7 @@ struct OutputState {
             case 'F': result += "Furnace Bypass"; break;
             case 'M': result += "Force Furnace"; break;
             case 'H': result += "Force Heat Pump"; break;
+            case 'O': result += "Force Heat Pump, Furnace Bypass"; break;
             case 'B': result += "Force Both"; break;
             default:  result += "Invalid Case";
         }
@@ -216,6 +218,7 @@ struct OutputState {
             case 'S': result += "SSR On, All Passthrough"; break;
             case 'o': result += "SSR Off, All Alternate"; break;
             case 'O': result += "SSR On, All Alternate"; break;
+            case 'e': result += "SSR Off, Override Hi Heat Pump"; break;
             default:  result += "Unknown Output State";
         }
         return result;

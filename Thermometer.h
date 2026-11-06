@@ -6,18 +6,16 @@ class Thermometer
 
     DallasTemperature *sensors = nullptr; // DallasTemperature instance
     unsigned long lastReadTime = 0;
-    int lastTemperature;
     int hysteresisMode = HIGH;
-    static const int INITIAL_TEMPERATURE = 999; // An out-of-range initial temperature
     static const int TEMPERATURE_OFFSET = -3; // Offset to adjust the temperature reading
 public:
+    static const int INITIAL_TEMPERATURE = 999; // An out-of-range initial temperature
     const char* name;
     DeviceAddress address;
+    int lastTemperature = INITIAL_TEMPERATURE;
     Thermometer(){};
     Thermometer(const char* name, DeviceAddress address);
 
-    bool getHysteresisMode(int setPointF, int temperatureSwing = 1);
-    bool getCallState(int setPointF, int temperatureSwing = 1);
     int retrieveTemperature();
     void setSensor(DallasTemperature &sensors);
     void printAddress();
