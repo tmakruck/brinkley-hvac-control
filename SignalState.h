@@ -1,6 +1,45 @@
 #pragma once
 #include <Arduino.h>
 
+namespace SignalStateEncoding {
+    struct HighBitInfo {
+        uint8_t bits;
+        char character;
+        const char* description;
+    };
+
+    struct LowBitInfo {
+        uint8_t bits;
+        char character;
+        const char* description;
+    };
+
+    static const HighBitInfo HIGH_BIT_TABLE[] = {
+        { 0b000, '-', "No Furnace or Underbelly Call" },
+        { 0b001, 'F', "Furnace Call" },
+        { 0b010, 'U', "Underbelly Call" },
+        { 0b011, 'B', "Both are Calling" }
+    };
+
+    static const LowBitInfo LOW_BIT_TABLE[] = {
+        { 0b00000, '_', "Low Hysteresis, Nothing On" },
+        { 0b01000, 'f', "Low Hysteresis, Low Fan Only" },
+        { 0b00100, 'F', "Low Hysteresis, Hi Fan Only" },
+        { 0b01010, 'c', "Low Hysteresis, Low Fan Cool" },
+        { 0b00110, 'C', "Low Hysteresis, Hi Fan Cool" },
+        { 0b01001, 'h', "Low Hysteresis, Low Fan Heat" },
+        { 0b00101, 'H', "Low Hysteresis, Hi Fan Heat" },
+
+        { 0b10000, '-', "High Hysteresis, Nothing On" },
+        { 0b11000, 'x', "High Hysteresis, Low Fan Only" },
+        { 0b10100, 'X', "High Hysteresis, Hi Fan Only" },
+        { 0b11010, 'y', "High Hysteresis, Low Fan Cool" },
+        { 0b10110, 'Y', "High Hysteresis, Hi Fan Cool" },
+        { 0b11001, 'z', "High Hysteresis, Low Fan Heat" },
+        { 0b10101, 'Z', "High Hysteresis, Hi Fan Heat" }
+    };
+}
+
 struct SignalState {
 
     // Bit positions (MSB → LSB)
@@ -108,93 +147,74 @@ struct SignalState {
             return getLowBitString();
     }
 
-    // 3-bit high table (8 entries)
+    // 3-bit high table
     char getHighBitCharacter() {
-        uint8_t b = bits;
-
-        uint8_t highBits =
-            ((b >> UNUSED)     & 1) << 2 |
-            ((b >> UBELLYCALL) & 1) << 1 |
-            ((b >> FURNACE)    & 1);
-
-        switch (highBits) {
-            case 0b000: return '-';
-            case 0b001: return 'F';
-            case 0b010: return 'U';
-            case 0b011: return 'B';
-            default:    return '?';
-        }
+        return getHighBitInfo().character;
     }
 
-    // 5-bit low table (32 entries)
+    // 5-bit low table
     char getLowBitCharacter() {
-        uint8_t lowBits = bits & 0x1F;
-
-        switch (lowBits) {
-            // Low Hysteresis
-            case 0b00000: return '_';
-            case 0b01000: return 'f';
-            case 0b00100: return 'F';
-            case 0b01010: return 'c';
-            case 0b00110: return 'C';
-            case 0b01001: return 'h';
-            case 0b00101: return 'H';
-
-            // High Hysteresis
-            case 0b10000: return '-';
-            case 0b11000: return 'x';
-            case 0b10100: return 'X';
-            case 0b11010: return 'y';
-            case 0b10110: return 'Y';
-            case 0b11001: return 'z';
-            case 0b10101: return 'Z';
-
-            default: return '?';
-        }
+        return getLowBitInfo().character;
     }
 
     String getHighBitString() {
-        char highBitChar = getHighBitCharacter();
+        SignalStateEncoding::HighBitInfo info = getHighBitInfo();
         String result = "";
-        result += highBitChar;
+        result += info.character;
         result += " - ";
-
-        switch (highBitChar) {
-            case '-': result += "No Furnace or Underbelly Call"; break;
-            case 'F': result += "Furnace Call"; break;
-            case 'U': result += "Underbelly Call"; break;
-            case 'B': result += "Both are Calling"; break;
-            default:  result += "Invalid Case";
-        }
+        result += info.description;
         return result;
     }
 
     String getLowBitString() {
-        char lowBitChar = getLowBitCharacter();
+        SignalStateEncoding::LowBitInfo info = getLowBitInfo();
         String result = "";
-        result += lowBitChar;
+        result += info.character;
         result += " - ";
-
-        switch (lowBitChar) {
-            // Low Hysteresis
-            case '_': result += "Low Hysteresis, Nothing On"; break;
-            case 'f': result += "Low Hysteresis, Low Fan Only"; break;
-            case 'F': result += "Low Hysteresis, Hi Fan Only"; break;
-            case 'c': result += "Low Hysteresis, Low Fan Cool"; break;
-            case 'C': result += "Low Hysteresis, Hi Fan Cool"; break;
-            case 'h': result += "Low Hysteresis, Low Fan Heat"; break;
-            case 'H': result += "Low Hysteresis, Hi Fan Heat"; break;
-
-            // High Hysteresis
-            case '-': result += "High Hysteresis, Nothing On"; break;
-            case 'x': result += "High Hysteresis, Low Fan Only"; break;
-            case 'X': result += "High Hysteresis, Hi Fan Only"; break;
-            case 'y': result += "High Hysteresis, Low Fan Cool"; break;
-            case 'Y': result += "High Hysteresis, Hi Fan Cool"; break;
-            case 'z': result += "High Hysteresis, Low Fan Heat"; break;
-            case 'Z': result += "High Hysteresis, Hi Fan Heat"; break;      
-            default: result += "Invalid Heat Pump Inputs";
-        }
+        result += info.description;
         return result;
+    }
+
+    SignalStateEncoding::HighBitInfo getHighBitInfo() const {
+        uint8_t highBits =
+            ((bits >> UNUSED)     & 1) << 2 |
+            ((bits >> UBELLYCALL) & 1) << 1 |
+            ((bits >> FURNACE)    & 1);
+
+        for (uint8_t i = 0; i < sizeof(SignalStateEncoding::HIGH_BIT_TABLE) / sizeof(SignalStateEncoding::HighBitInfo); i++) {
+            if (SignalStateEncoding::HIGH_BIT_TABLE[i].bits == highBits)
+                return SignalStateEncoding::HIGH_BIT_TABLE[i];
+        }
+
+        return { highBits, '?', "Invalid Furnace/Underbelly State" };
+    }
+
+    SignalStateEncoding::LowBitInfo getLowBitInfo() const {
+        uint8_t lowBits = bits & 0x1F;
+
+        for (uint8_t i = 0; i < sizeof(SignalStateEncoding::LOW_BIT_TABLE) / sizeof(SignalStateEncoding::LowBitInfo); i++) {
+            if (SignalStateEncoding::LOW_BIT_TABLE[i].bits == lowBits)
+                return SignalStateEncoding::LOW_BIT_TABLE[i];
+        }
+
+        return { lowBits, '?', "Invalid Heat Pump Inputs" };
+    }
+
+    static const SignalStateEncoding::HighBitInfo* findHighBitInfo(char character) {
+        uint8_t count = sizeof(SignalStateEncoding::HIGH_BIT_TABLE) / sizeof(SignalStateEncoding::HighBitInfo);
+        for (uint8_t i = 0; i < count; i++) {
+            if (SignalStateEncoding::HIGH_BIT_TABLE[i].character == character)
+                return &SignalStateEncoding::HIGH_BIT_TABLE[i];
+        }
+        return nullptr;
+    }
+
+    static const SignalStateEncoding::LowBitInfo* findLowBitInfo(char character) {
+        uint8_t count = sizeof(SignalStateEncoding::LOW_BIT_TABLE) / sizeof(SignalStateEncoding::LowBitInfo);
+        for (uint8_t i = 0; i < count; i++) {
+            if (SignalStateEncoding::LOW_BIT_TABLE[i].character == character)
+                return &SignalStateEncoding::LOW_BIT_TABLE[i];
+        }
+        return nullptr;
     }
 };
