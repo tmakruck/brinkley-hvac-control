@@ -1,6 +1,64 @@
 #pragma once
 #include "StateType.h"
 
+namespace OutputStateEncoding {
+    struct HighBitInfo {
+        uint8_t bits;
+        char character;
+        const char* description;
+    };
+
+    struct LowBitInfo {
+        uint8_t bits;
+        char character;
+        const char* description;
+    };
+
+    static const HighBitInfo HIGH_BIT_TABLE[] = {
+        { 0b000, 'P', "Furnace Passthrough" },
+        { 0b001, 'F', "Furnace Bypass" },
+        { 0b011, 'M', "Force Furnace" },
+        { 0b100, 'H', "Force Heat Pump" },
+        { 0b101, 'O', "Force Heat Pump, Furnace Bypass" },
+        { 0b111, 'B', "Force Both" }
+    };
+
+    static const LowBitInfo LOW_BIT_TABLE[] = {
+        { 0b00000, '_', "SSR Off; All Passthrough" },
+        { 0b00001, 'a', "SSR Off; Low Fan Passthrough; Hi Fan Passthrough; AC Passthrough; Heat Pump Alternate" },
+        { 0b00010, 'b', "SSR Off; Low Fan Passthrough; Hi Fan Passthrough; AC Alternate; Heat Pump Passthrough" },
+        { 0b00011, 'c', "SSR Off; Low Fan Passthrough; Hi Fan Passthrough; AC Alternate; Heat Pump Alternate" },
+        { 0b00100, 'd', "SSR Off; Low Fan Passthrough; Hi Fan Alternate; AC Passthrough; Heat Pump Passthrough" },
+        { 0b00101, 'e', "SSR Off; Override Hi Heat Pump" },
+        { 0b00110, 'f', "SSR Off; Low Fan Passthrough; Hi Fan Alternate; AC Alternate; Heat Pump Passthrough" },
+        { 0b00111, 'g', "SSR Off; Low Fan Passthrough; Hi Fan Alternate; AC Alternate; Heat Pump Alternate" },
+        { 0b01000, 'h', "SSR Off; Low Fan Alternate; Hi Fan Passthrough; AC Passthrough; Heat Pump Passthrough" },
+        { 0b01001, 'i', "SSR Off; Low Fan Alternate; Hi Fan Passthrough; AC Passthrough; Heat Pump Alternate" },
+        { 0b01010, 'j', "SSR Off; Low Fan Alternate; Hi Fan Passthrough; AC Alternate; Heat Pump Passthrough" },
+        { 0b01011, 'k', "SSR Off; Low Fan Alternate; Hi Fan Passthrough; AC Alternate; Heat Pump Alternate" },
+        { 0b01100, 'l', "SSR Off; Low Fan Alternate; Hi Fan Alternate; AC Passthrough; Heat Pump Passthrough" },
+        { 0b01101, 'm', "SSR Off; Low Fan Alternate; Hi Fan Alternate; AC Passthrough; Heat Pump Alternate" },
+        { 0b01110, 'n', "SSR Off; Low Fan Alternate; Hi Fan Alternate; AC Alternate; Heat Pump Passthrough" },
+        { 0b01111, 'o', "SSR Off; All Alternate" },
+
+        { 0b10000, 'S', "SSR On; All Passthrough" },
+        { 0b10001, 'A', "SSR On; Low Fan Passthrough; Hi Fan Passthrough; AC Passthrough; Heat Pump Alternate" },
+        { 0b10010, 'B', "SSR On; Low Fan Passthrough; Hi Fan Passthrough; AC Alternate; Heat Pump Passthrough" },
+        { 0b10011, 'C', "SSR On; Low Fan Passthrough; Hi Fan Passthrough; AC Alternate; Heat Pump Alternate" },
+        { 0b10100, 'D', "SSR On; Low Fan Passthrough; Hi Fan Alternate; AC Passthrough; Heat Pump Passthrough" },
+        { 0b10101, 'E', "SSR On; Low Fan Passthrough; Hi Fan Alternate; AC Passthrough; Heat Pump Alternate" },
+        { 0b10110, 'F', "SSR On; Low Fan Passthrough; Hi Fan Alternate; AC Alternate; Heat Pump Passthrough" },
+        { 0b10111, 'G', "SSR On; Low Fan Passthrough; Hi Fan Alternate; AC Alternate; Heat Pump Alternate" },
+        { 0b11000, 'H', "SSR On; Low Fan Alternate; Hi Fan Passthrough; AC Passthrough; Heat Pump Passthrough" },
+        { 0b11001, 'I', "SSR On; Low Fan Alternate; Hi Fan Passthrough; AC Passthrough; Heat Pump Alternate" },
+        { 0b11010, 'J', "SSR On; Low Fan Alternate; Hi Fan Passthrough; AC Alternate; Heat Pump Passthrough" },
+        { 0b11011, 'K', "SSR On; Low Fan Alternate; Hi Fan Passthrough; AC Alternate; Heat Pump Alternate" },
+        { 0b11100, 'L', "SSR On; Low Fan Alternate; Hi Fan Alternate; AC Passthrough; Heat Pump Passthrough" },
+        { 0b11101, 'M', "SSR On; Low Fan Alternate; Hi Fan Alternate; AC Passthrough; Heat Pump Alternate" },
+        { 0b11110, 'N', "SSR On; Low Fan Alternate; Hi Fan Alternate; AC Alternate; Heat Pump Passthrough" },
+        { 0b11111, 'O', "SSR On; All Alternate" }
+    };
+}
 
 struct OutputState {
     enum Bit {
@@ -119,108 +177,76 @@ struct OutputState {
             return getLowBitString();
     }
 
-    // 3-bit high table (8 entries)
+    // 3-bit high table
     char getHighBitCharacter() {
-        uint8_t b = bits;
-
-        // 3-bit high group
-        uint8_t highBits =
-            ((b >> HEAT_PUMP_POWER) & 1) << 2 |
-            ((b >> FURNACE_POWER)   & 1) << 1 |
-            ((b >> FURNACE)         & 1);
-
-        switch (highBits) {
-            case 0b000: return 'P'; // Furnace Passthrough
-            case 0b001: return 'F'; // Furnace Bypass
-            case 0b011: return 'M'; // Manually Run Furnace (Force On) like for Underbelly
-            case 0b100: return 'H'; // Heat Pump Power Alternate, expected only if LowBit is also alternate
-            case 0b101: return 'O'; // Heat Pump Power Alternate and Furnace Bypass
-            case 0b111: return 'B'; // Heat Pump Power Alternate and Furnace Power Alternate (Probably High Hystersis but cold underbelly)
-            
-            //case 0b101: return 'N'; // Heat pump power alternate and no furnace - likely invalid
-            //case 0b110: return '/'; // Invalid Combination - Heat Pump Power Alternate and Furnace Power but no Alternate
-            //case 0b010: return 'A'; // Furnace Power Alternate - this alone doesn't make sense
-            default:    return '?';
-        }
+        return getHighBitInfo().character;
     }
     
-    // 5-bit low table (32 entries)
+    // 5-bit low table
     char getLowBitCharacter() {
-        uint8_t lowBits = bits & 0x1F;
-
-        switch (lowBits) {
-            // SSR Off
-            case 0b00000: return '_'; // Everything else is passthrough
-            case 0b00001: return 'a';
-            case 0b00010: return 'b';
-            case 0b00011: return 'c';
-            case 0b00100: return 'd';
-            case 0b00101: return 'e';
-            case 0b00110: return 'f';
-            case 0b00111: return 'g';
-            case 0b01000: return 'h';
-            case 0b01001: return 'i';
-            case 0b01010: return 'j';
-            case 0b01011: return 'k';
-            case 0b01100: return 'l';
-            case 0b01101: return 'm';
-            case 0b01110: return 'n';
-            case 0b01111: return 'o'; // Everything else is alt state
-
-            // SSR On
-            case 0b10000: return 'S'; // Everything else is passthrough
-            case 0b10001: return 'A';
-            case 0b10010: return 'B';
-            case 0b10011: return 'C';
-            case 0b10100: return 'D';
-            case 0b10101: return 'E';
-            case 0b10110: return 'F';
-            case 0b10111: return 'G';
-            case 0b11000: return 'H';
-            case 0b11001: return 'I';
-            case 0b11010: return 'J';
-            case 0b11011: return 'K';
-            case 0b11100: return 'L';
-            case 0b11101: return 'M';
-            case 0b11110: return 'N';
-            case 0b11111: return 'O'; // Everything else is alt state
-            default: return '?';
-        }
+        return getLowBitInfo().character;
     }
 
     String getHighBitString(){        
-        char highBitChar = getHighBitCharacter();
+        OutputStateEncoding::HighBitInfo info = getHighBitInfo();
         String result = "";
-        result += highBitChar;
+        result += info.character;
         result += " - ";
-
-        switch (highBitChar) {
-            case 'P': result += "Furnace Passthrough"; break;
-            case 'F': result += "Furnace Bypass"; break;
-            case 'M': result += "Force Furnace"; break;
-            case 'H': result += "Force Heat Pump"; break;
-            case 'O': result += "Force Heat Pump, Furnace Bypass"; break;
-            case 'B': result += "Force Both"; break;
-            default:  result += "Invalid Case";
-        }
+        result += info.description;
         return result;
     }
 
     String getLowBitString(){       
-        char lowBitChar = getLowBitCharacter();
+        OutputStateEncoding::LowBitInfo info = getLowBitInfo();
         String result = "";
-        result += lowBitChar;
+        result += info.character;
         result += " - ";
-
-        switch (lowBitChar) {
-            // Low Hystersis mode
-            case '_': result += "SSR Off, All Passthrough"; break;
-            case 'S': result += "SSR On, All Passthrough"; break;
-            case 'o': result += "SSR Off, All Alternate"; break;
-            case 'O': result += "SSR On, All Alternate"; break;
-            case 'e': result += "SSR Off, Override Hi Heat Pump"; break;
-            default:  result += "Unknown Output State";
-        }
+        result += info.description;
         return result;
+    }
+
+    OutputStateEncoding::HighBitInfo getHighBitInfo() const {
+        uint8_t highBits =
+            ((bits >> HEAT_PUMP_POWER) & 1) << 2 |
+            ((bits >> FURNACE_POWER)   & 1) << 1 |
+            ((bits >> FURNACE)         & 1);
+
+        uint8_t count = sizeof(OutputStateEncoding::HIGH_BIT_TABLE) / sizeof(OutputStateEncoding::HighBitInfo);
+        for (uint8_t i = 0; i < count; i++) {
+            if (OutputStateEncoding::HIGH_BIT_TABLE[i].bits == highBits)
+                return OutputStateEncoding::HIGH_BIT_TABLE[i];
+        }
+
+        return { highBits, '?', "Invalid Furnace/Heat Pump Power State" };
+    }
+
+    OutputStateEncoding::LowBitInfo getLowBitInfo() const {
+        uint8_t lowBits = bits & 0x1F;
+
+        uint8_t count = sizeof(OutputStateEncoding::LOW_BIT_TABLE) / sizeof(OutputStateEncoding::LowBitInfo);
+        for (uint8_t i = 0; i < count; i++) {
+            if (OutputStateEncoding::LOW_BIT_TABLE[i].bits == lowBits)
+                return OutputStateEncoding::LOW_BIT_TABLE[i];
+        }
+
+        return { lowBits, '?', "Unknown Output State" };
+    }
+
+    static const OutputStateEncoding::HighBitInfo* findHighBitInfo(char character) {
+        uint8_t count = sizeof(OutputStateEncoding::HIGH_BIT_TABLE) / sizeof(OutputStateEncoding::HighBitInfo);
+        for (uint8_t i = 0; i < count; i++) {
+            if (OutputStateEncoding::HIGH_BIT_TABLE[i].character == character)
+                return &OutputStateEncoding::HIGH_BIT_TABLE[i];
+        }
+        return nullptr;
+    }
+
+    static const OutputStateEncoding::LowBitInfo* findLowBitInfo(char character) {
+        uint8_t count = sizeof(OutputStateEncoding::LOW_BIT_TABLE) / sizeof(OutputStateEncoding::LowBitInfo);
+        for (uint8_t i = 0; i < count; i++) {
+            if (OutputStateEncoding::LOW_BIT_TABLE[i].character == character)
+                return &OutputStateEncoding::LOW_BIT_TABLE[i];
+        }
+        return nullptr;
     }
 };
